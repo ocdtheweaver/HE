@@ -1,0 +1,81 @@
+// HE Language (Hunter's Engine Script)
+// Created by Dickson C. Oko-Okpara, 2025
+// Official repository: https://github.com/ocdtheweaver/HE
+// he_language_origin_id: https://github.com/ocdtheweaver/HE
+
+Program         ::= { Import | Object }
+
+Import          ::= "fetch" StringLiteral
+
+Object          ::= "make" Identifier  "{"  ObjectBody  "}"
+
+ObjectBody      ::= { PropertySection | ActionSection | Object }
+
+PropertySection ::= Identifier "has:" Block
+
+Block           ::= "[" { Property } "]"
+
+Property        ::= Identifier ":" Type "=" Value
+                  | Identifier ":" Type "-"          (* uninitialized *)
+                  | "end" Identifier                 (* lifetime flag *)
+
+ActionSection   ::= "Actions" "[" { Action } "]"
+
+Action          ::= Identifier [ "(" ParamList ")" ] "[" { Statement } "]"
+
+ParamList       ::= Identifier { "," Identifier }
+
+Statement       ::= Assignment
+                  | Operation
+                  | Conditional
+                  | Loop
+                  | ActionCall
+                  | ExpressionStatement
+
+Assignment      ::= Identifier "=" Value
+                  | Identifier "=" Identifier "." Identifier
+
+Operation       ::= "increase" Identifier "by" Value
+                  | "reduce"   Identifier "by" Value
+
+Conditional     ::= "if" Expression "[" { Statement } "]"
+                  | "otherwise" Expression "[" { Statement } "]"
+                  | "orelse" "[" { Statement } "]"
+
+Loop            ::= "repeat" "[" { Statement } "]" "until" Condition
+                  | "run"    "[" { Statement } "]" "until" Condition
+                  | "while" Selector "run" "[" { Statement } "]"
+
+Selector        ::= Identifier "|" Identifier
+
+Condition       ::= Expression | "end" Identifier
+
+ExpressionStatement ::= Selector "run" StatementExpression
+
+StatementExpression ::= Identifier
+                      | Identifier "=" Value
+
+Expression      ::= Identifier
+                  | Identifier Comparator Value
+                  | Identifier "|" Identifier
+
+Comparator      ::= "==" | "!=" | "<" | "<=" | ">" | ">="
+
+ActionCall      ::= Identifier "(" ")"
+
+Type            ::= "int" | "dec" | "string"
+
+Value           ::= Number | StringLiteral | Identifier
+
+Number          ::= Integer | Decimal
+
+Integer         ::= [ "-" ] Digit { Digit }
+Decimal         ::= [ "-" ] Digit { Digit } "." Digit { Digit }
+
+StringLiteral   ::= '"' { ANY-CHAR } '"'
+
+Identifier      ::= Letter { Letter | Digit | "_" }
+
+Letter          ::= "A"…"Z" | "a"…"z" | "_"
+Digit           ::= "0"…"9"
+ANY-CHAR        ::= any printable unicode character except '"' 
