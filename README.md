@@ -2,7 +2,7 @@
 
 Created by **Dickson C. Oko-Okpara** in 2025.
 
-HE is an English-like programming language designed for games, simulations, and interactive logic. This is the official specification and compiler.
+HE is an English-like programming language designed for games, simulations, and interactive logic. This is the official specification and should have been compiler (stopped at an interpreter for certain reasons).
 
 ---
 
