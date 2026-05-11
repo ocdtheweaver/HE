@@ -1,0 +1,223 @@
+-- Hunter's Engine test suite
+-- Tests all major language features
+
+-- ─── 1. Variables & arithmetic ────────────────────────────────────────────────
+set x to 10
+set y to 3
+print x + y        -- 13
+print x - y        -- 7
+print x * y        -- 30
+print x / y        -- 3.3333...
+print x % y        -- 1
+print x ^ 2        -- 100
+
+-- ─── 2. String operations ─────────────────────────────────────────────────────
+set greeting is "Hello"
+set name is "World"
+print greeting + ", " + name + "!"
+
+set msg is "  trim me  "
+print trim(msg)
+
+print upper("hello")
+print lower("WORLD")
+
+set parts is split("a,b,c", ",")
+print len(parts)           -- 3
+print join(parts, " | ")   -- a | b | c
+
+-- ─── 3. Boolean & comparison ──────────────────────────────────────────────────
+set a is true
+set b is false
+print a and b     -- false
+print a or b      -- true
+print not a       -- false
+print 5 == 5      -- true
+print 5 != 3      -- true
+print 10 >= 10    -- true
+
+-- ─── 4. If / else if / else ───────────────────────────────────────────────────
+set score is 72
+if score >= 90 then
+    print "Grade: A"
+else if score >= 80 then
+    print "Grade: B"
+else if score >= 70 then
+    print "Grade: C"
+else
+    print "Grade: F"
+end
+
+-- ─── 5. While loop ────────────────────────────────────────────────────────────
+set counter is 1
+while counter <= 5 do
+    print counter
+    set counter to counter + 1
+end
+
+-- ─── 6. For each ──────────────────────────────────────────────────────────────
+set fruits is ["apple", "banana", "cherry"]
+for each fruit in fruits do
+    print fruit
+end
+
+-- ─── 7. Lists ─────────────────────────────────────────────────────────────────
+set numbers is [10, 20, 30]
+append(numbers, 40)
+print len(numbers)          -- 4
+print numbers[0]            -- 10
+print numbers[3]            -- 40
+numbers[1] is 99
+print numbers[1]            -- 99
+
+-- ─── 8. Break & continue ──────────────────────────────────────────────────────
+set i is 0
+while i < 10 do
+    set i to i + 1
+    if i == 3 then
+        continue
+    end
+    if i == 6 then
+        break
+    end
+    print i
+end
+-- should print 1 2 4 5
+
+-- ─── 9. Nested loops ──────────────────────────────────────────────────────────
+set row is 1
+while row <= 3 do
+    set col is 1
+    set line is ""
+    while col <= 3 do
+        set line to line + toString(row * col) + " "
+        set col to col + 1
+    end
+    print line
+    set row to row + 1
+end
+
+-- ─── 10. Classes & objects ────────────────────────────────────────────────────
+class Animal
+    property name
+    property sound is "..."
+
+    method speak
+        print this.name + " says " + this.sound
+    end
+
+    method describe
+        print "I am " + this.name
+    end
+end
+
+object cat of Animal with name is "Whiskers", sound is "meow"
+call speak on cat
+call describe on cat
+
+-- ─── 11. Inheritance ──────────────────────────────────────────────────────────
+class Dog extends Animal
+    property breed
+
+    method fetch with item
+        print this.name + " fetches the " + item + "!"
+    end
+
+    method speak
+        print this.name + " barks: " + this.sound + "!"
+    end
+end
+
+object rex of Dog with name is "Rex", sound is "woof", breed is "Labrador"
+call speak on rex
+call fetch on rex with "ball"
+
+-- ─── 12. Methods with return values ───────────────────────────────────────────
+class Calculator
+    method add with a, b
+        return a + b
+    end
+
+    method multiply with a, b
+        answer a * b
+    end
+
+    method factorial with n
+        if n <= 1 then
+            return 1
+        end
+        return n * this.factorial(n - 1)
+    end
+end
+
+object calc of Calculator
+set sum is calc.add(7, 8)
+print sum                         -- 15
+print calc.multiply(6, 7)         -- 42
+print calc.factorial(5)           -- 120
+
+-- ─── 13. new keyword (inline object creation) ─────────────────────────────────
+set dog2 is new Dog with name is "Buddy", sound is "arf", breed is "Poodle"
+call speak on dog2
+
+-- ─── 14. Object property access & mutation ────────────────────────────────────
+set rex.sound to "WOOF"
+call speak on rex
+
+-- ─── 15. Builtins ─────────────────────────────────────────────────────────────
+print sqrt(144)      -- 12
+print abs(-42)       -- 42
+print floor(3.9)     -- 3
+print ceil(3.1)      -- 4
+print toNumber("42") + 1   -- 43
+print typeOf(42)     -- number
+print typeOf("hi")   -- string
+print typeOf(true)   -- boolean
+print typeOf(nil)    -- nil
+print typeOf([1,2])  -- list
+
+-- ─── 16. Chained method calls ─────────────────────────────────────────────────
+class Counter
+    property value is 0
+
+    method increment
+        set this.value to this.value + 1
+    end
+
+    method getValue
+        return this.value
+    end
+end
+
+object c of Counter
+call increment on c
+call increment on c
+call increment on c
+print c.getValue()    -- 3
+
+-- ─── 17. String as iterable ───────────────────────────────────────────────────
+set letters is ""
+for each ch in "hello" do
+    set letters to letters + upper(ch)
+end
+print letters    -- HELLO
+
+-- ─── 18. Nested classes ───────────────────────────────────────────────────────
+class Point
+    property x is 0
+    property y is 0
+
+    method toString
+        return "(" + this.x + ", " + this.y + ")"
+    end
+
+    method distanceFromOrigin
+        return sqrt(this.x ^ 2 + this.y ^ 2)
+    end
+end
+
+object p of Point with x is 3, y is 4
+print p.toString()               -- (3, 4)
+print p.distanceFromOrigin()     -- 5
+
+print "All tests passed!"
