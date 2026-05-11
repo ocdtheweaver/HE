@@ -1,0 +1,198 @@
+﻿package visitor
+
+import ast.*
+import he_new.parser.HE_NewBaseVisitor
+import he_new.parser.HE_NewParser
+
+class AstVisitor : HE_NewBaseVisitor<Node>() {
+    
+    override fun visitProgram(ctx: HE_NewParser.ProgramContext): Program {
+        val lines = ctx.line().map { visitLine(it) }.filterNotNull()
+        return Program(lines)
+    }
+    
+    override fun visitLine(ctx: HE_NewParser.LineContext): Line? {
+        return when {
+            ctx.summon() != null -> visitSummon(ctx.summon())
+            ctx.withAssets() != null -> visitWithAssets(ctx.withAssets())
+            ctx.object_() != null -> visitObject(ctx.object_())
+            else -> null
+        }
+    }
+    
+    override fun visitSummon(ctx: HE_NewParser.SummonContext): SummonLine {
+        val type = ctx.STRING().text.removeSurrounding("\"")
+        val name = ctx.ID().text
+        return SummonLine(type, name)
+    }
+    
+    override fun visitWithAssets(ctx: HE_NewParser.WithAssetsContext): WithAssetsLine {
+        val assets = ctx.assetList().asset().map { visitAsset(it) }
+        return WithAssetsLine(assets)
+    }
+    
+    override fun visitAsset(ctx: HE_NewParser.AssetContext): Asset {
+        val type = when (ctx.assetType().text) {
+            "image" -> AssetType.IMAGE
+            "sound" -> AssetType.SOUND
+            "music" -> AssetType.MUSIC
+            "video" -> AssetType.VIDEO
+            "font" -> AssetType.FONT
+            "shader" -> AssetType.SHADER
+            else -> AssetType.IMAGE
+        }
+        val path = ctx.STRING().text.removeSurrounding("\"")
+        val name = ctx.ID()?.text
+        return Asset(type, path, name)
+    }
+    
+    override fun visitObject(ctx: HE_NewParser.ObjectContext): ObjectDef {
+        val name = ctx.ID(0).text
+        val parent = ctx.ID().getOrNull(1)?.text
+        val body = visitObjectBody(ctx.objectBody())
+        return ObjectDef(name, parent, body)
+    }
+    
+    override fun visitObjectBody(ctx: HE_NewParser.ObjectBodyContext): ObjectBody {
+        val sections = ctx.objectSection()
+            .map { visitObjectSection(it) }
+            .filterNotNull()
+        return ObjectBody(sections)
+    }
+    
+    override fun visitObjectSection(ctx: HE_NewParser.ObjectSectionContext): ObjectSection? {
+        return when {
+            ctx.propertiesSection() != null -> visitPropertiesSection(ctx.propertiesSection())
+            ctx.abilitiesSection() != null -> visitAbilitiesSection(ctx.abilitiesSection())
+            ctx.reactionSection() != null -> visitReactionSection(ctx.reactionSection())
+            else -> null
+        }
+    }
+    
+    override fun visitPropertiesSection(ctx: HE_NewParser.PropertiesSectionContext): PropertiesSection {
+        val name = ctx.ID().text
+        val properties = ctx.propertyBlock().map { visitPropertyBlock(it) }
+        return PropertiesSection(name, properties)
+    }
+    
+    override fun visitPropertyBlock(ctx: HE_NewParser.PropertyBlockContext): Property {
+        return visitProperty(ctx.property())
+    }
+    
+    override fun visitProperty(ctx: HE_NewParser.PropertyContext): Property {
+        val name = ctx.ID().text
+        val value = visitExpression(ctx.expression())
+        return Property(name, value)
+    }
+    
+    override fun visitAbilitiesSection(ctx: HE_NewParser.AbilitiesSectionContext): AbilitiesSection {
+        val name = ctx.ID().text
+        val methods = ctx.abilityBlock().map { visitAbilityBlock(it) }
+        return AbilitiesSection(name, methods)
+    }
+    
+    override fun visitAbilityBlock(ctx: HE_NewParser.AbilityBlockContext): Method {
+        val method = visitMethod(ctx.method())
+        val statements = ctx.statement().map { visitStatement(it) }
+        return method.copy(body = statements)
+    }
+    
+    override fun visitMethod(ctx: HE_NewParser.MethodContext): Method {
+        val name = ctx.ID().text
+        val params = ctx.paramList()?.parameter()?.map { visitParameter(it) } ?: emptyList()
+        return Method(name, params, emptyList())
+    }
+    
+    override fun visitParameter(ctx: HE_NewParser.ParameterContext): Parameter {
+        val name = ctx.ID().text
+        val type = when (ctx.type().text) {
+            "string" -> Type.STRING
+            "number" -> Type.NUMBER
+            "boolean" -> Type.BOOLEAN
+            else -> Type.STRING
+        }
+        return Parameter(name, type)
+    }
+    
+    override fun visitReactionSection(ctx: HE_NewParser.ReactionSectionContext): ReactionSection {
+        val event = ctx.ID().text
+        val statements = ctx.statement().map { visitStatement(it) }
+        return ReactionSection(event, statements)
+    }
+    
+    override fun visitStatement(ctx: HE_NewParser.StatementContext): Statement {
+        return when {
+            ctx.printStmt() != null -> visitPrintStmt(ctx.printStmt())
+            ctx.callStmt() != null -> visitCallStmt(ctx.callStmt())
+            ctx.showStmt() != null -> visitShowStmt(ctx.showStmt())
+            ctx.waitStmt() != null -> visitWaitStmt(ctx.waitStmt())
+            ctx.assignmentStmt() != null -> visitAssignmentStmt(ctx.assignmentStmt())
+            else -> throw IllegalArgumentException("Unknown statement type")
+        }
+    }
+    
+    override fun visitPrintStmt(ctx: HE_NewParser.PrintStmtContext): PrintStmt {
+        return PrintStmt(visitExpression(ctx.expression()))
+    }
+    
+    override fun visitCallStmt(ctx: HE_NewParser.CallStmtContext): CallStmt {
+        val target = ctx.ID(0).text
+        val method = ctx.ID(1).text
+        val args = ctx.argList()?.expression()?.map { visitExpression(it) } ?: emptyList()
+        return CallStmt(target, method, args)
+    }
+    
+    override fun visitShowStmt(ctx: HE_NewParser.ShowStmtContext): ShowStmt {
+        val asset = ctx.ID().text
+        val centered = ctx.CENTERED() != null
+        return ShowStmt(asset, centered)
+    }
+    
+    override fun visitWaitStmt(ctx: HE_NewParser.WaitStmtContext): WaitStmt {
+        return WaitStmt(visitExpression(ctx.expression()))
+    }
+    
+    override fun visitAssignmentStmt(ctx: HE_NewParser.AssignmentStmtContext): AssignmentStmt {
+        val name = ctx.ID().text
+        val value = visitExpression(ctx.expression())
+        return AssignmentStmt(name, value)
+    }
+    
+    override fun visitExpression(ctx: HE_NewParser.ExpressionContext): Expression {
+        return visitAdditiveExpression(ctx.additiveExpression())
+    }
+    
+    override fun visitAdditiveExpression(ctx: HE_NewParser.AdditiveExpressionContext): Expression {
+        var expr = visitMultiplicativeExpression(ctx.multiplicativeExpression(0))
+        
+        for (i in 1 until ctx.multiplicativeExpression().size) {
+            val operator = if (ctx.PLUS(i - 1) != null) "+" else "-"
+            val right = visitMultiplicativeExpression(ctx.multiplicativeExpression(i))
+            expr = BinaryExpression(expr, operator, right)
+        }
+        
+        return expr
+    }
+    
+    override fun visitMultiplicativeExpression(ctx: HE_NewParser.MultiplicativeExpressionContext): Expression {
+        var expr = visitPrimaryExpression(ctx.primaryExpression(0))
+        
+        for (i in 1 until ctx.primaryExpression().size) {
+            val operator = if (ctx.MULT(i - 1) != null) "*" else "/"
+            val right = visitPrimaryExpression(ctx.primaryExpression(i))
+            expr = BinaryExpression(expr, operator, right)
+        }
+        
+        return expr
+    }
+    
+    override fun visitPrimaryExpression(ctx: HE_NewParser.PrimaryExpressionContext): Expression {
+        return when {
+            ctx.STRING() != null -> StringLiteral(ctx.STRING().text.removeSurrounding("\""))
+            ctx.ID() != null -> Identifier(ctx.ID().text)
+            ctx.NUMBER() != null -> NumberLiteral(ctx.NUMBER().text.toDouble())
+            ctx.LPAREN() != null -> visitExpression(ctx.expression())
+            else -> StringLiteral("unknown")
+        }
+    }
+}

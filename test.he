@@ -1,19 +1,28 @@
-summon "core" as system
+~ This is a main file comment ~
+summon "Player" as hero
 
-make Game {
-    Game has [
-        score is 0
-        message is "Hello World!"
+with image "assets/hero.png" named playerSprite
+  ~ and sound "assets/jump.wav" ~
+
+make Player {
+    ~ Character properties ~
+    hero has: [
+        name is "Hero"
+        health is 100 ~ starting health ~
     ]
-
-    Game can [
-        Start [
-            print message
-            print "Game started!"
+    
+    ~ Character abilities ~  
+    hero can: [
+        jump() [
+            print "Jumping!"
+            ~ Play jump animation ~
+            tell playerSprite to playAnimation with "jump"
+            wait 0.5 seconds
         ]
     ]
-
-    on start [
-        tell Game to Start
+    
+    on collision [
+        print "Ouch!"
+        health is health - 10 ~ reduce health on collision ~
     ]
 }
