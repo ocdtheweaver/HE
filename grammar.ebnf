@@ -1,81 +1,80 @@
-// HE Language (Hunter's Engine Script)
-// Created by Dickson C. Oko-Okpara, 2025
-// Official repository: https://github.com/ocdtheweaver/HE
-// he_language_origin_id: https://github.com/ocdtheweaver/HE
+Program         ::= { Line }
 
-Program         ::= { Import | Object }
+Line            ::= Summon | WithAssets | Object | GlobalStatement | Comment | EmptyLine
 
-Import          ::= "fetch" StringLiteral
+EmptyLine       ::= Newline
+Comment         ::= "~" ~"~"* "~"
 
-Object          ::= "make" Identifier  "{"  ObjectBody  "}"
+(* ─────── Summoning modules ─────── *)
+Summon          ::= "summon" StringLiteral ("named" | "as") Identifier
 
-ObjectBody      ::= { PropertySection | ActionSection | Object }
+(* ─────── Assets ─────── *)
+WithAssets      ::= "with" AssetList
+AssetList       ::= Asset { ("and" | ",") Asset }
+Asset           ::= AssetType StringLiteral ["named" Identifier]
+AssetType       ::= "image" | "sound" | "music" | "video" | "font" | "shader"
 
-PropertySection ::= Identifier "has:" Block
+(* ─────── Objects ─────── *)
+Object          ::= ("create" | "make") Identifier ["like" Identifier] "{" ObjectBody "}"
+ObjectBody      ::= { Section | NestedObject | Comment | WithAssets }
 
-Block           ::= "[" { Property } "]"
+Section         ::= Properties | Abilities | Reactions | Memories
 
-Property        ::= Identifier ":" Type "=" Value
-                  | Identifier ":" Type "-"          (* uninitialized *)
-                  | "end" Identifier                 (* lifetime flag *)
+Properties      ::= Identifier ("has" | "owns" | "carries") Block
+Abilities       ::= Identifier ("can" | "knows how to") "[" { Action } "]"
+Reactions       ::= ("when" | "whenever" | "on") Trigger "[" { Statement } "]"
+Memories        ::= Identifier "remembers" ":" Block
 
-ActionSection   ::= "Actions" "[" { Action } "]"
+Trigger         ::= Identifier | Identifier "with" Identifier
 
-Action          ::= Identifier [ "(" ParamList ")" ] "[" { Statement } "]"
+Block           ::= "[" { Property | Statement | Comment } "]"
+Property        ::= Identifier ("is" | "starts as") Expression
 
-ParamList       ::= Identifier { "," Identifier }
+(* ─────── Actions & Methods ─────── *)
+Action          ::= Identifier ["(" [ParamList] ")"] ["returns" Type] "[" { Statement } "]"
+ParamList       ::= Parameter { "," Parameter }
+Parameter       ::= Identifier ":" Type
 
-Statement       ::= Assignment
-                  | Operation
-                  | Conditional
-                  | Loop
-                  | ActionCall
-                  | ExpressionStatement
+(* ─────── Statements ─────── *)
+Statement       ::= Say | Change | Decide | Repeat | Call | Wait | Return
 
-Assignment      ::= Identifier "=" Value
-                  | Identifier "=" Identifier "." Identifier
+Say             ::= ("say" | "print") Expression
+Change          ::= ("set" | "make") Identifier "to" Expression
+Decide          ::= "if" Expression "then" Block ["else" Block]
+Repeat          ::= ("repeat" | "while" Expression) Block
+Call            ::= "tell" Identifier "to" Identifier ["with" ArgList]
+Wait            ::= "wait" Expression ("seconds" | "frames")
+Return          ::= "return" Expression
 
-Operation       ::= "increase" Identifier "by" Value
-                  | "reduce"   Identifier "by" Value
+ArgList         ::= Expression { "," Expression }
 
-Conditional     ::= "if" Expression "[" { Statement } "]"
-                  | "otherwise" Expression "[" { Statement } "]"
-                  | "orelse" "[" { Statement } "]"
+(* ─────── Expressions ─────── *)
+Expression      ::= LogicOr
+LogicOr         ::= LogicAnd { "or" LogicAnd }
+LogicAnd        ::= Comparison { "and" Comparison }
+Comparison      ::= Arithmetic [ ("==" | "!=" | ">" | "<" | ">=" | "<=") Arithmetic ]
+Arithmetic      ::= Term { ("+" | "-") Term }
+Term            ::= Factor { ("*" | "/") Factor }
+Factor          ::= Unary [ ("^" | "**") Factor ]
+Unary           ::= ("-" | "!") Primary | Primary
+Primary         ::= Number | StringLiteral | Boolean | Identifier 
+                  | Identifier "(" [ArgList] ")" 
+                  | "(" Expression ")" 
+                  | ArrayLiteral
 
-Loop            ::= "repeat" "[" { Statement } "]" "until" Condition
-                  | "run"    "[" { Statement } "]" "until" Condition
-                  | "while" Selector "run" "[" { Statement } "]"
+ArrayLiteral    ::= "[" [ Expression { "," Expression } ] "]"
 
-Selector        ::= Identifier "|" Identifier
+(* ─────── Types & Values ─────── *)
+Type            ::= "number" | "string" | "boolean" | Type "[]"
+Value           ::= Number | StringLiteral | Boolean
+Boolean         ::= "true" | "false" | "yes" | "no"
 
-Condition       ::= Expression | "end" Identifier
+(* ─────── Lexical ─────── *)
+Identifier      ::= (Letter | "_") { Letter | Digit | "_" }
+Number          ::= Digit+ [ "." Digit+ ]
+StringLiteral   ::= '"' [^"]* '"'
+Letter          ::= "a".."z" | "A".."Z"
+Digit           ::= "0".."9"
+Newline         ::= "\n" | "\r\n"
 
-ExpressionStatement ::= Selector "run" StatementExpression
-
-StatementExpression ::= Identifier
-                      | Identifier "=" Value
-
-Expression      ::= Identifier
-                  | Identifier Comparator Value
-                  | Identifier "|" Identifier
-
-Comparator      ::= "==" | "!=" | "<" | "<=" | ">" | ">="
-
-ActionCall      ::= Identifier "(" ")"
-
-Type            ::= "int" | "dec" | "string"
-
-Value           ::= Number | StringLiteral | Identifier
-
-Number          ::= Integer | Decimal
-
-Integer         ::= [ "-" ] Digit { Digit }
-Decimal         ::= [ "-" ] Digit { Digit } "." Digit { Digit }
-
-StringLiteral   ::= '"' { ANY-CHAR } '"'
-
-Identifier      ::= Letter { Letter | Digit | "_" }
-
-Letter          ::= "A"…"Z" | "a"…"z" | "_"
-Digit           ::= "0"…"9"
-ANY-CHAR        ::= any printable unicode character except '"' 
+GlobalStatement ::= Say | Change | Wait | Call

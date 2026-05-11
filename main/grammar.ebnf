@@ -1,0 +1,80 @@
+Program         ::= { Line }
+
+Line            ::= Summon | WithAssets | Object | GlobalStatement | Comment | EmptyLine
+
+EmptyLine       ::= Newline
+Comment         ::= "~" ~"~"* "~"
+
+(* ─────── Summoning modules ─────── *)
+Summon          ::= "summon" StringLiteral ("named" | "as") Identifier
+
+(* ─────── Assets ─────── *)
+WithAssets      ::= "with" AssetList
+AssetList       ::= Asset { ("and" | ",") Asset }
+Asset           ::= AssetType StringLiteral ["named" Identifier]
+AssetType       ::= "image" | "sound" | "music" | "video" | "font" | "shader"
+
+(* ─────── Objects ─────── *)
+Object          ::= ("create" | "make") Identifier ["like" Identifier] "{" ObjectBody "}"
+ObjectBody      ::= { Section | NestedObject | Comment | WithAssets }
+
+Section         ::= Properties | Abilities | Reactions | Memories
+
+Properties      ::= Identifier ("has" | "owns" | "carries") Block
+Abilities       ::= Identifier ("can" | "knows how to") "[" { Action } "]"
+Reactions       ::= ("when" | "whenever" | "on") Trigger "[" { Statement } "]"
+Memories        ::= Identifier "remembers" ":" Block
+
+Trigger         ::= Identifier | Identifier "with" Identifier
+
+Block           ::= "[" { Property | Statement | Comment } "]"
+Property        ::= Identifier ("is" | "starts as") Expression
+
+(* ─────── Actions & Methods ─────── *)
+Action          ::= Identifier ["(" [ParamList] ")"] ["returns" Type] "[" { Statement } "]"
+ParamList       ::= Parameter { "," Parameter }
+Parameter       ::= Identifier ":" Type
+
+(* ─────── Statements ─────── *)
+Statement       ::= Say | Change | Decide | Repeat | Call | Wait | Return
+
+Say             ::= ("say" | "print") Expression
+Change          ::= ("set" | "make") Identifier "to" Expression
+Decide          ::= "if" Expression "then" Block ["else" Block]
+Repeat          ::= ("repeat" | "while" Expression) Block
+Call            ::= "tell" Identifier "to" Identifier ["with" ArgList]
+Wait            ::= "wait" Expression ("seconds" | "frames")
+Return          ::= "return" Expression
+
+ArgList         ::= Expression { "," Expression }
+
+(* ─────── Expressions ─────── *)
+Expression      ::= LogicOr
+LogicOr         ::= LogicAnd { "or" LogicAnd }
+LogicAnd        ::= Comparison { "and" Comparison }
+Comparison      ::= Arithmetic [ ("==" | "!=" | ">" | "<" | ">=" | "<=") Arithmetic ]
+Arithmetic      ::= Term { ("+" | "-") Term }
+Term            ::= Factor { ("*" | "/") Factor }
+Factor          ::= Unary [ ("^" | "**") Factor ]
+Unary           ::= ("-" | "!") Primary | Primary
+Primary         ::= Number | StringLiteral | Boolean | Identifier 
+                  | Identifier "(" [ArgList] ")" 
+                  | "(" Expression ")" 
+                  | ArrayLiteral
+
+ArrayLiteral    ::= "[" [ Expression { "," Expression } ] "]"
+
+(* ─────── Types & Values ─────── *)
+Type            ::= "number" | "string" | "boolean" | Type "[]"
+Value           ::= Number | StringLiteral | Boolean
+Boolean         ::= "true" | "false" | "yes" | "no"
+
+(* ─────── Lexical ─────── *)
+Identifier      ::= (Letter | "_") { Letter | Digit | "_" }
+Number          ::= Digit+ [ "." Digit+ ]
+StringLiteral   ::= '"' [^"]* '"'
+Letter          ::= "a".."z" | "A".."Z"
+Digit           ::= "0".."9"
+Newline         ::= "\n" | "\r\n"
+
+GlobalStatement ::= Say | Change | Wait | Call

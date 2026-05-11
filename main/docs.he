@@ -1,0 +1,10 @@
+summon "ui" as he
+
+tell he to renderDocs with [
+  "Hunterlang (HE) — Dev Docs",
+  "Intro",
+  "Syntax",
+  "Modules",
+  "Reactions",
+  "Run"
+]
