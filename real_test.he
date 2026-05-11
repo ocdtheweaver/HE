@@ -1,0 +1,23 @@
+summon "he-core" as engine
+
+with image "wolf.png" named WolfLogo
+   and sound "howl.wav" named AlphaHowl
+
+make Genesis like engine.Application {
+    Genesis has [
+        greeting is "Hello, wild coder!"
+    ]
+
+    Genesis can [
+        SayHello(name: string) [
+            print greeting
+            print "Welcome to the pack, " + name + "!"
+        ]
+    ]
+
+    on start [
+        show WolfLogo centered
+        wait 1 seconds
+        tell Genesis to SayHello with "hunter"
+    ]
+}

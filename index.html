@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Hunter’s Engine — web.he</title>
+<style>
+  body {margin:0;background:#0b0c1a;color:#ff6600;font-family:monospace;overflow:hidden;}
+  #log {position:fixed;bottom:10px;left:10px;background:rgba(0,0,0,0.7);padding:10px;border-radius:8px;max-width:780px;max-height:150px;overflow-y:auto;z-index:100;}
+</style>
+</head>
+<body>
+<div id="log">Loading web.he...</div>
+
+<script>
+const log = (...a)=>{const d=document.createElement('div');d.textContent=a.join(' ');document.getElementById('log').prepend(d);};
+
+let navbar = {
+  background: "#0b0c1a",
+  accent: "#ff6600",
+  title: "Hunter’s Engine",
+  links: ["Home","About","Projects","Contact","GitHub"],
+  current: "Home",
+  wolfIcon: new Image()
+};
+navbar.wolfIcon.src = "https://files.catbox.moe/1n0p4r.png";
+
+const style = document.createElement('style');
+style.textContent = `@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&display=swap');`;
+document.head.appendChild(style);
+
+function drawNavbar(){
+  document.body.style.background = navbar.background;
+  const html = `
+    <div style="position:fixed;top:0;left:0;width:100%;height:80px;background:${navbar.background};box-shadow:0 4px 20px rgba(0,0,0,0.8);z-index:999;">
+      <img src="${navbar.wolfIcon.src}" style="position:absolute;left:20px;top:10px;width:60px;height:60px;filter:drop-shadow(0 0 8px ${navbar.accent});">
+      <div style="position:absolute;left:90px;top:18px;color:${navbar.accent};font:700 32px 'Cinzel Decorative',serif;letter-spacing:2px;">
+        ${navbar.title}
+      </div>
+      <div style="position:absolute;right:20px;top:25px;display:flex;gap:40px;">
+        ${navbar.links.map(link=>`
+          <a href="#" onclick="event.preventDefault();navbar.current='${link}';log('Navigated to ${link}');drawNavbar();"
+             style="color:${link===navbar.current?navbar.accent:'#aaa'};text-decoration:none;font:bold 18px monospace;
+                    padding:5px 10px;border-bottom:${link===navbar.current?'4px solid '+navbar.accent:'none'};">
+            ${link}
+          </a>
+        `).join('')}
+      </div>
+    </div>
+  `;
+  document.body.innerHTML = html + document.body.innerHTML;
+  log("Navbar drawn — Hunter’s Engine is live.");
+}
+
+fetch('web.he')
+  .then(r=>r.text())
+  .then(code=>{
+    // super-simple parser — we only need to know the file exists and has "Navbar"
+    if(code.includes('create Navbar')){
+      navbar.wolfIcon.onload = drawNavbar;
+      log("web.he loaded successfully.");
+    }
+  })
+  .catch(()=>log("Put web.he in the same folder and refresh."));
+</script>
+</body>
+</html>

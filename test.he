@@ -1,0 +1,19 @@
+summon "core" as system
+
+make Game {
+    Game has [
+        score is 0
+        message is "Hello World!"
+    ]
+
+    Game can [
+        Start [
+            print message
+            print "Game started!"
+        ]
+    ]
+
+    on start [
+        tell Game to Start
+    ]
+}

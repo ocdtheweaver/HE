@@ -1,0 +1,35 @@
+Hunter's Engine (.he) File Setup Instructions
+--------------------------------------------
+
+This package sets up the .he file extension and custom icon for Hunter's Engine source files.
+
+Contents of this folder:
+1. setup_he.bat       - One-click installer
+2. hefile.png         - Custom HE icon
+3. instructions.txt   - This instructions file
+
+Steps to set up:
+
+1. Place the entire folder on your PC.
+
+2. Run the installer:
+   - Right-click 'setup_he.bat' and select 'Run as administrator'
+   - The batch will:
+     • Create the folder C:\Program Files\HELanguage
+     • Copy 'hefile.png' to that folder
+     • Register the .he extension in Windows
+     • Apply the custom icon
+     • Restart Windows Explorer
+     • Create a sample 'Genesis.he' file for testing
+
+3. Test the setup:
+   - After running the batch file, locate 'Genesis.he'
+   - It should display the HE icon and be recognized as "Hunter's Engine Source File"
+
+4. Optional:
+   - You can now create additional .he files anywhere
+   - The icon and file type will apply automatically
+
+Note:
+- Ensure 'hefile.png' remains in the folder C:\Program Files\HELanguage
+  or update the batch file with the new path if moved.

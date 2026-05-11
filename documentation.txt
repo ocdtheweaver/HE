@@ -1,0 +1,447 @@
+Below is the **official, clean, formatted, production-ready documentation** for your language **HE** — the *complete language manual*.
+This is suitable for publishing on GitHub as `docs/HE_Language.md`.
+
+If you want, I can also generate:
+
+* A **website version** (Docusaurus / Next.js)
+* A **PDF manual**
+* A **cheat-sheet poster**
+* A **VSCode syntax highlighting extension**
+
+---
+
+# 📘 **HE Language Documentation**
+
+### *Hyper Engine Script — Official Specification*
+
+---
+
+# 1. Introduction
+
+**HE (Hyper Engine Script)** is a lightweight, English-like scripting language focused on designing **games**, **interactive objects**, and **simulation logic**.
+HE transpiles to **modern C++**, providing:
+
+* High readability
+* Minimal syntax
+* Blocks for structured game logic
+* Objects, actions, properties
+* English-style loops and conditions
+* Modular file importing
+* Explicit control over state and flow
+
+This document specifies the **full syntax and semantics** of HE.
+
+---
+
+# 2. Files & Modules
+
+### **2.1 Imports**
+
+```he
+fetch "physics.he"
+fetch "ui/buttons.he"
+```
+
+Rules:
+
+* Loads the file once (recursive import protection)
+* Available anywhere in the file
+* Behaves like a header include in C++
+
+---
+
+# 3. Objects
+
+Objects are core containers for logic and data.
+
+### **Syntax**
+
+```he
+make ObjectName {
+    (Blocks)
+}
+```
+
+### Example
+
+```he
+make Player {
+    Stats [...]
+    Movement [...]
+}
+```
+
+Objects translate to C++ classes or structs depending on transpiler mode.
+
+---
+
+# 4. Blocks
+
+Blocks organize related properties and actions.
+
+### **Syntax**
+
+```he
+BlockName [
+    (Properties)
+    (Actions)
+    (Statements)
+]
+```
+
+Examples:
+
+```he
+Stats [
+    Health: int = 100
+    Speed: dec = 2.5
+]
+```
+
+```he
+UI [
+    Draw() [
+        print "drawing"
+    ]
+]
+```
+
+Blocks compile to grouped C++ code sections.
+
+---
+
+# 5. Properties
+
+### 5.1 Typed properties
+
+HE supports:
+
+* `int`
+* `dec` → `float`
+* `string`
+
+```he
+Health: int = 100
+Name: string = Hero
+Speed: dec = 3.5
+```
+
+### 5.2 Placeholder (unset) property
+
+```he
+Texture: string-
+```
+
+### 5.3 Prefixed strings with “with =”
+
+Useful for asset paths.
+
+```he
+with = "assets/ui/" make Menu {
+    Icon with = icon.png;
+    Sound with = click.wav;
+}
+```
+
+Meaning:
+
+```
+Icon = "assets/ui/icon.png"
+Sound = "assets/ui/click.wav"
+```
+
+---
+
+# 6. End Flags
+
+The keyword:
+
+```he
+end Block
+```
+
+declares an **alive flag**, used in loops.
+
+Example:
+
+```he
+end Game
+```
+
+Generates:
+
+```cpp
+bool Game_alive = true;
+```
+
+Used in:
+
+```he
+until end Game
+```
+
+---
+
+# 7. Actions
+
+Actions are HE’s functions.
+
+### **Syntax**
+
+```he
+ActionName() [
+    (Statements)
+]
+```
+
+With parameter(s):
+
+```he
+Move(amount) [
+    Speed = Speed + amount
+]
+```
+
+Actions compile to C++ member functions.
+
+---
+
+# 8. Loops
+
+HE provides **three loop constructs**, each meaningfully distinct.
+
+---
+
+## 8.1 repeat … until
+
+**Do–while** style: runs at least once.
+
+```he
+repeat [
+    print "tick"
+]
+until end Player
+```
+
+---
+
+## 8.2 run … until
+
+Runs **until condition becomes true** (inverted while-loop).
+
+```he
+run [
+    Score = Score + 1
+]
+until end Game
+```
+
+---
+
+## 8.3 while A|B run
+
+Cross-object while-loop referencing block state.
+
+```he
+while Player|Rest run [
+    Energy = Energy - 1
+]
+```
+
+Equivalent:
+
+```
+while (Player.Rest_alive) { ... }
+```
+
+---
+
+# 9. Conditions
+
+HE supports English-style branching.
+
+### **Basic if**
+
+```he
+if (Health < 20)
+    print "Low"
+```
+
+### **otherwise (else if)**
+
+```he
+otherwise (Health < 50)
+    print "Medium"
+```
+
+### **orelse (else)**
+
+```he
+orelse
+    print "Good"
+```
+
+### Operators
+
+* `and` → `&&`
+* `or` → `||`
+
+---
+
+# 10. Statements
+
+### 10.1 Print
+
+```he
+print "Hello"
+```
+
+### 10.2 Math statements
+
+```he
+increase Health by 5
+reduce Speed by 1
+```
+
+Becomes:
+
+```cpp
+Health += 5;
+Speed -= 1;
+```
+
+### 10.3 Bind
+
+One-way property binding.
+
+```he
+bind Player.Health with Enemy.Damage so reduce Player.Health by Enemy.Damage
+```
+
+Transpiles to:
+
+```cpp
+Player.Health = Enemy.Damage; // reduce Player.Health by Enemy.Damage
+```
+
+### 10.4 Assignments
+
+```he
+Distance = Distance + Speed
+```
+
+---
+
+# 11. Comments & Unknown Lines
+
+Anything the parser does not recognize is automatically converted to a C++ comment.
+Allows forward-compatibility and pseudo-code.
+
+```he
+TODO: optimize movement
+```
+
+→
+
+```cpp
+// TODO: optimize movement
+```
+
+---
+
+# 12. Complete Example Program
+
+```he
+fetch "physics.he"
+
+make Runner {
+
+    Stats [
+        Speed: dec = 4.5
+        Distance: dec = 0
+        Alive: int = 1
+
+        end Game
+    ]
+
+    Movement [
+        Move() [
+            repeat [
+                Distance = Distance + Speed
+                print Distance
+            ]
+            until end Game
+        ]
+    ]
+
+    Collision [
+        Hit() [
+            reduce Alive by 1
+
+            if (Alive <= 0)
+                print "Game Over"
+        ]
+    ]
+}
+```
+
+---
+
+# 13. Syntax Summary (Cheat Sheet)
+
+### **Object**
+
+```
+make Name { ... }
+```
+
+### **Block**
+
+```
+BlockName [ ... ]
+```
+
+### **Property**
+
+```
+Name: type = value
+Name: type-
+with = "prefix/" Name with = file.png;
+```
+
+### **Action**
+
+```
+DoThing() [ ... ]
+```
+
+### **Loops**
+
+```
+repeat [ ... ] until end X
+run [ ... ] until end X
+while Obj|Block run [ ... ]
+```
+
+### **Conditions**
+
+```
+if (cond)
+otherwise (cond)
+orelse
+```
+
+---
+
+# Want more?
+
+I can generate:
+
+✅ **VSCode syntax highlighting (HE.tmLanguage.json)**
+✅ **Sublime Text syntax**
+✅ **Full grammar (EBNF)**
+✅ **Compiler stages diagram**
+✅ **Language logo**
+✅ **A PDF manual**
+
+Just tell me what you want next.

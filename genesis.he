@@ -1,0 +1,14 @@
+make Genesis {
+    Genesis has:
+
+    greetings [
+        greeting: string = Hello World
+    ]
+
+    Actions [
+        SayHello(name: string) [
+            print greeting
+            print name
+        ]
+    ]
+}
