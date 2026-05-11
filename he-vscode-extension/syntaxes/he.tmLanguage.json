@@ -1,0 +1,31 @@
+{
+  "scopeName": "source.he",
+  "name": "HE",
+  "patterns": [
+    {
+      "name": "comment.block.he",
+      "begin": "~",
+      "end": "~",
+      "beginCaptures": { "0": { "name": "punctuation.definition.comment.begin.he" } },
+      "endCaptures": { "0": { "name": "punctuation.definition.comment.end.he" } }
+    },
+    {
+      "name": "string.quoted.double.he",
+      "begin": "\"",
+      "end": "\"",
+      "beginCaptures": { "0": { "name": "punctuation.definition.string.begin.he" } },
+      "endCaptures": { "0": { "name": "punctuation.definition.string.end.he" } },
+      "patterns": [{ "match": "\\\\.", "name": "constant.character.escape.he" }]
+    },
+    {
+      "match": "\\b(summon|with|make|create|as|named|image|sound|music|video|font|shader|has|owns|carries|can|knows how to|on|when|whenever|print|say|tell|to|wait|seconds|is|and|or|if|then|else|return|repeat|while)\\b",
+      "name": "keyword.control.he"
+    },
+    { "match": "\\b(true|false|yes|no)\\b", "name": "constant.language.boolean.he" },
+    { "match": "\\b[0-9]+(\\.[0-9]+)?\\b", "name": "constant.numeric.he" },
+    { "match": "[a-zA-Z_][a-zA-Z0-9_\\.]*", "name": "variable.other.identifier.he" }
+  ],
+  "repository": {},
+  "foldingStartMarker": "\\{\\s*$",
+  "foldingStopMarker": "^\\s*\\}"
+}

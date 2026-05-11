@@ -1,5 +1,4 @@
-// main.go
-package main
+﻿package main
 
 import (
 	"bufio"
@@ -17,112 +16,16 @@ HE interpreter prototype with arithmetic evaluation:
 - supports variables (identifiers) lookup
 - supports quoted strings and concatenation via +
 - accepts assignment expressed as `x is expr` or `x = expr`
+
+This is a working interpreter intended to back the `he run <file.he>` command.
 */
 
-type TokenType int
-
-const (
-	TokEOF TokenType = iota
-	TokIdentifier
-	TokString
-	TokNumber
-	TokSymbol
-	TokKeyword
-)
-
-type Token struct {
-	Typ TokenType
-	Val string
-	Pos int
-}
-
-var keywords = map[string]bool{
-	"summon": true, "as": true, "named": true,
-	"with": true, "image": true, "sound": true, "music": true, "video": true, "font": true, "shader": true, "and": true,
-	"make": true, "create": true, "like": true, "has": true, "can": true, "on": true, "when": true, "whenever": true,
-	"print": true, "tell": true, "to": true, "wait": true, "seconds": true, "is": true,
-}
-
-type Asset struct {
-	Kind string
-	Path string
-	Name string
-}
-
-type Ability struct {
-	Name       string
-	Params     []string
-	Statements []Stmt
-}
-
-type ObjectDef struct {
-	Name       string
-	Like       string
-	Properties map[string]Value
-	Abilities  map[string]*Ability
-	Reactions  map[string][]Stmt // trigger -> statements
-}
-
-type Program struct {
-	Summons []struct{ Path, As string }
-	Assets  []Asset
-	Objects map[string]*ObjectDef
-	Globals []Stmt
-}
-
-type Value struct {
-	Number float64
-	Str    string
-	Bool   bool
-	Type   string // "number", "string", "boolean"
-}
-
-type Stmt interface {
-	Exec(rt *Runtime) error
-	String() string
-}
-
-type Runtime struct {
-	Program *Program
-	// runtime state
-	Objects map[string]*ObjectDef
-	Assets  map[string]Asset
-	Vars    map[string]Value
-}
-
-func NewRuntime(p *Program) *Runtime {
-	rt := &Runtime{
-		Program: p,
-		Objects: map[string]*ObjectDef{},
-		Assets:  map[string]Asset{},
-		Vars:    map[string]Value{},
-	}
-	// register objects and assets
-	for _, a := range p.Assets {
-		n := a.Name
-		if n == "" {
-			n = a.Path
-		}
-		rt.Assets[n] = a
-	}
-	for k, v := range p.Objects {
-		rt.Objects[k] = v
-		// initialize properties into Vars with objectName.propertyName
-		for pn, pv := range v.Properties {
-			rt.Vars[k+"."+pn] = pv
-		}
-	}
-	return rt
-}
-
-// ----------------- Expression evaluation -----------------
-
-// Token for expression evaluation
 type exprTok struct {
-	typ string // "num","id","str","op","(" , ")"
+	typ string // "num","id","str","op","(", ")"
 	val string
 }
 
+// Token for expression evaluation
 func tokenizeExpr(s string) ([]exprTok, error) {
 	out := []exprTok{}
 	i := 0
@@ -182,7 +85,6 @@ func tokenizeExpr(s string) ([]exprTok, error) {
 			continue
 		}
 		// operators and parens
-		// support + - * / ( )
 		if strings.ContainsRune("+-*/()", rune(c)) {
 			t := string(c)
 			if t == "(" || t == ")" {
@@ -218,11 +120,9 @@ func shuntingYard(tokens []exprTok) ([]exprTok, error) {
 		case "num", "id", "str":
 			out = append(out, t)
 		case "op":
-			// handle unary minus: if op is "-" and previous token is nil or operator or "(" then treat as unary by converting to (0 - x)
+			// unary minus: convert "-x" to "0 - x"
 			if t.val == "-" {
-				// unary if it's first token or previous is operator or "("
 				if i == 0 || (tokens[i-1].typ == "op") || (tokens[i-1].typ == "(") {
-					// push a zero then subtraction: we implement by appending num 0 before as if "0 - x"
 					out = append(out, exprTok{typ: "num", val: "0"})
 				}
 			}
@@ -267,6 +167,75 @@ func shuntingYard(tokens []exprTok) ([]exprTok, error) {
 	return out, nil
 }
 
+type Value struct {
+	Number float64
+	Str    string
+	Bool   bool
+	Type   string // "number", "string", "boolean"
+}
+
+type Ability struct {
+	Name       string
+	Params     []string
+	Statements []Stmt
+}
+
+type ObjectDef struct {
+	Name       string
+	Like       string
+	Properties map[string]Value
+	Abilities  map[string]*Ability
+	Reactions  map[string][]Stmt // trigger -> statements
+}
+
+type Program struct {
+	Summons []struct{ Path, As string }
+	Assets  []Asset
+	Objects map[string]*ObjectDef
+	Globals []Stmt
+}
+
+type Asset struct {
+	Kind string
+	Path string
+	Name string
+}
+
+type Stmt interface {
+	Exec(rt *Runtime) error
+	String() string
+}
+
+type Runtime struct {
+	Program *Program
+	Objects map[string]*ObjectDef
+	Assets  map[string]Asset
+	Vars    map[string]Value
+}
+
+func NewRuntime(p *Program) *Runtime {
+	rt := &Runtime{
+		Program: p,
+		Objects: map[string]*ObjectDef{},
+		Assets:  map[string]Asset{},
+		Vars:    map[string]Value{},
+	}
+	for _, a := range p.Assets {
+		n := a.Name
+		if n == "" {
+			n = a.Path
+		}
+		rt.Assets[n] = a
+	}
+	for k, v := range p.Objects {
+		rt.Objects[k] = v
+		for pn, pv := range v.Properties {
+			rt.Vars[k+"."+pn] = pv
+		}
+	}
+	return rt
+}
+
 func evalRPN(rpn []exprTok, rt *Runtime) (Value, error) {
 	var stack []Value
 	push := func(v Value) { stack = append(stack, v) }
@@ -278,6 +247,7 @@ func evalRPN(rpn []exprTok, rt *Runtime) (Value, error) {
 		stack = stack[:len(stack)-1]
 		return v, nil
 	}
+
 	for _, t := range rpn {
 		switch t.typ {
 		case "num":
@@ -286,15 +256,12 @@ func evalRPN(rpn []exprTok, rt *Runtime) (Value, error) {
 		case "str":
 			push(Value{Str: t.val, Type: "string"})
 		case "id":
-			// lookup variable in runtime
 			if v, ok := rt.Vars[t.val]; ok {
 				push(v)
 			} else {
-				// if unknown identifier, push zero-number by default
 				push(Value{Number: 0, Type: "number"})
 			}
 		case "op":
-			// binary operators only
 			b, err := pop()
 			if err != nil {
 				return Value{}, err
@@ -305,11 +272,9 @@ func evalRPN(rpn []exprTok, rt *Runtime) (Value, error) {
 			}
 			switch t.val {
 			case "+":
-				// number+number -> number, string+string or mixed -> concat string
 				if a.Type == "number" && b.Type == "number" {
 					push(Value{Number: a.Number + b.Number, Type: "number"})
 				} else {
-					// coerce to strings
 					as := a.Str
 					if a.Type == "number" {
 						as = fmt.Sprintf("%v", a.Number)
@@ -333,6 +298,7 @@ func evalRPN(rpn []exprTok, rt *Runtime) (Value, error) {
 			return Value{}, fmt.Errorf("unexpected token in rpn: %v", t.typ)
 		}
 	}
+
 	if len(stack) != 1 {
 		return Value{}, fmt.Errorf("invalid expression (stack len %d)", len(stack))
 	}
@@ -341,7 +307,6 @@ func evalRPN(rpn []exprTok, rt *Runtime) (Value, error) {
 
 func evaluateExpression(expr string, rt *Runtime) (Value, error) {
 	expr = strings.TrimSpace(expr)
-	// quick: if it's a quoted string
 	if strings.HasPrefix(expr, "\"") && strings.HasSuffix(expr, "\"") && len(expr) >= 2 {
 		return Value{Str: expr[1 : len(expr)-1], Type: "string"}, nil
 	}
@@ -353,64 +318,40 @@ func evaluateExpression(expr string, rt *Runtime) (Value, error) {
 	if err != nil {
 		return Value{}, err
 	}
-	val, err := evalRPN(rpn, rt)
-	if err != nil {
-		return Value{}, err
-	}
-	return val, nil
+	return evalRPN(rpn, rt)
 }
 
 // ----------------- Statements -----------------
 
-// PrintStmt now evaluates expressions
-type PrintStmt struct {
-	Expr string // expression text
-}
+type PrintStmt struct{ Expr string }
 
 func (p *PrintStmt) Exec(rt *Runtime) error {
-	// if it's a raw quoted string, print directly
 	trim := strings.TrimSpace(p.Expr)
 	if strings.HasPrefix(trim, "\"") && strings.HasSuffix(trim, "\"") {
 		fmt.Println(trim[1 : len(trim)-1])
 		return nil
 	}
-	// evaluate expression
 	v, err := evaluateExpression(p.Expr, rt)
 	if err != nil {
-		// fallback: try to print literal or identifier
-		if vv, ok := rt.Vars[strings.TrimSpace(p.Expr)]; ok {
-			if vv.Type == "number" {
-				fmt.Println(vv.Number)
-			} else {
-				fmt.Println(vv.Str)
-			}
-			return nil
-		}
 		return fmt.Errorf("print eval error: %v", err)
 	}
-	if v.Type == "number" {
-		// print without trailing decimal if integer
+	switch v.Type {
+	case "number":
 		if v.Number == float64(int64(v.Number)) {
 			fmt.Printf("%d\n", int64(v.Number))
 		} else {
 			fmt.Println(v.Number)
 		}
-		return nil
-	}
-	if v.Type == "string" {
+	case "string":
 		fmt.Println(v.Str)
-		return nil
+	default:
+		fmt.Println(v)
 	}
-	// boolean not used often here
-	fmt.Println(v)
 	return nil
 }
 func (p *PrintStmt) String() string { return "print " + p.Expr }
 
-// WaitStmt unchanged
-type WaitStmt struct {
-	Seconds float64
-}
+type WaitStmt struct{ Seconds float64 }
 
 func (w *WaitStmt) Exec(rt *Runtime) error {
 	d := time.Duration(w.Seconds * float64(time.Second))
@@ -419,7 +360,6 @@ func (w *WaitStmt) Exec(rt *Runtime) error {
 }
 func (w *WaitStmt) String() string { return fmt.Sprintf("wait %f seconds", w.Seconds) }
 
-// TellStmt unchanged behavior
 type TellStmt struct {
 	Target string
 	Action string
@@ -427,7 +367,6 @@ type TellStmt struct {
 }
 
 func (t *TellStmt) Exec(rt *Runtime) error {
-	// simplistic: support asset playAnimation and play sound names
 	if a, ok := rt.Assets[t.Target]; ok {
 		fmt.Printf("[asset:%s] %s %v\n", t.Target, t.Action, t.Args)
 		if a.Kind == "sound" && (t.Action == "play" || t.Action == "playSound") {
@@ -435,7 +374,6 @@ func (t *TellStmt) Exec(rt *Runtime) error {
 		}
 		return nil
 	}
-	// if target is an object and action is a method (ability), try to run ability body
 	if obj, ok := rt.Objects[t.Target]; ok {
 		if ab, ok := obj.Abilities[t.Action]; ok {
 			for _, s := range ab.Statements {
@@ -451,7 +389,6 @@ func (t *TellStmt) Exec(rt *Runtime) error {
 }
 func (t *TellStmt) String() string { return fmt.Sprintf("tell %s to %s", t.Target, t.Action) }
 
-// AssignStmt now evaluates RHS expression fully
 type AssignStmt struct {
 	Lhs  string
 	Expr string
@@ -459,14 +396,11 @@ type AssignStmt struct {
 
 func (a *AssignStmt) Exec(rt *Runtime) error {
 	expr := strings.TrimSpace(a.Expr)
-	// evaluate expression
 	val, err := evaluateExpression(expr, rt)
 	if err == nil {
 		rt.Vars[a.Lhs] = val
 		return nil
 	}
-	// fallback: if expression is identifier or numeric or quoted handled in evaluateExpression; error otherwise
-	// to be safe, if evaluateExpression failed, try simple parse numeric or string
 	if f, err2 := strconv.ParseFloat(expr, 64); err2 == nil {
 		rt.Vars[a.Lhs] = Value{Number: f, Type: "number"}
 		return nil
@@ -475,21 +409,18 @@ func (a *AssignStmt) Exec(rt *Runtime) error {
 		rt.Vars[a.Lhs] = Value{Str: expr[1 : len(expr)-1], Type: "string"}
 		return nil
 	}
-	// identifier fallback
 	if v, ok := rt.Vars[expr]; ok {
 		rt.Vars[a.Lhs] = v
 		return nil
 	}
-	// unknown, set empty string
 	rt.Vars[a.Lhs] = Value{Str: expr, Type: "string"}
 	return nil
 }
 func (a *AssignStmt) String() string { return fmt.Sprintf("%s is %s", a.Lhs, a.Expr) }
 
-// ----------------- Parser (mostly unchanged) -----------------
+// ----------------- Parser (line-based, prototype) -----------------
 
 type Parser struct {
-	src   string
 	lines []string
 	pos   int
 }
@@ -500,14 +431,13 @@ func NewParser(src string) *Parser {
 	for scanner.Scan() {
 		lines = append(lines, scanner.Text())
 	}
-	return &Parser{src: src, lines: lines, pos: 0}
+	return &Parser{lines: lines, pos: 0}
 }
 
 func trimCommentMarkers(line string) string {
 	trim := strings.TrimSpace(line)
-	if strings.HasPrefix(trim, "~") && strings.HasSuffix(trim, "~") {
-		trim = strings.TrimSpace(trim[1 : len(trim)-1])
-		return trim
+	if strings.HasPrefix(trim, "~") && strings.HasSuffix(trim, "~") && len(trim) >= 2 {
+		return strings.TrimSpace(trim[1 : len(trim)-1])
 	}
 	return line
 }
@@ -530,43 +460,17 @@ func (p *Parser) nextLine() string {
 	return ""
 }
 
-func stripInlineComments(line string) string {
-	out := ""
-	i := 0
-	for i < len(line) {
-		if line[i] == '~' {
-			j := i + 1
-			for j < len(line) && line[j] != '~' {
-				j++
-			}
-			if j < len(line) && line[j] == '~' {
-				i = j + 1
-				continue
-			}
-			out += string(line[i])
-			i++
-		} else {
-			out += string(line[i])
-			i++
-		}
-	}
-	return out
-}
-
 func (p *Parser) ParseProgram() (*Program, error) {
 	prg := &Program{Objects: map[string]*ObjectDef{}}
 	for p.hasMore() {
-		line := p.nextLine()
-		trim := strings.TrimSpace(line)
-		if trim == "" {
+		line := strings.TrimSpace(p.nextLine())
+		if line == "" {
 			continue
 		}
-		if strings.HasPrefix(strings.TrimSpace(trim), "~") && strings.HasSuffix(strings.TrimSpace(trim), "~") {
-			continue
-		}
-		lower := strings.ToLower(trim)
+		line = trimCommentMarkers(line)
+		lower := strings.ToLower(line)
 		if strings.HasPrefix(lower, "summon") {
-			path, asn, err := parseSummon(trim)
+			path, asn, err := parseSummon(line)
 			if err != nil {
 				return nil, err
 			}
@@ -574,7 +478,7 @@ func (p *Parser) ParseProgram() (*Program, error) {
 			continue
 		}
 		if strings.HasPrefix(lower, "with") {
-			assets, err := p.parseWith(trim)
+			assets, err := p.parseWith(line)
 			if err != nil {
 				return nil, err
 			}
@@ -582,14 +486,15 @@ func (p *Parser) ParseProgram() (*Program, error) {
 			continue
 		}
 		if strings.HasPrefix(lower, "make ") || strings.HasPrefix(lower, "create ") {
-			obj, err := p.parseObject(trim)
+			obj, err := p.parseObject(line)
 			if err != nil {
 				return nil, err
 			}
 			prg.Objects[obj.Name] = obj
 			continue
 		}
-		stmt, err := parseGlobalStatement(trim)
+
+		stmt, err := parseGlobalStatement(line)
 		if err == nil && stmt != nil {
 			prg.Globals = append(prg.Globals, stmt)
 			continue
@@ -599,10 +504,6 @@ func (p *Parser) ParseProgram() (*Program, error) {
 }
 
 func parseSummon(line string) (string, string, error) {
-	parts := strings.Fields(line)
-	if len(parts) < 2 {
-		return "", "", errors.New("invalid summon")
-	}
 	start := strings.Index(line, "\"")
 	end := strings.LastIndex(line, "\"")
 	if start == -1 || end == -1 || end == start {
@@ -624,19 +525,14 @@ func (p *Parser) parseWith(firstLine string) ([]Asset, error) {
 	assets := []Asset{}
 	buf := firstLine
 	for p.hasMore() {
-		nl := p.peekLine()
-		ts := strings.TrimSpace(nl)
-		if ts == "" {
+		nl := strings.TrimSpace(p.peekLine())
+		if nl == "" {
 			break
 		}
-		if strings.HasPrefix(ts, "~") && strings.HasSuffix(ts, "~") {
-			p.nextLine()
-			continue
-		}
-		low := strings.ToLower(ts)
+		low := strings.ToLower(nl)
 		if strings.HasPrefix(low, "and ") || strings.HasPrefix(low, ",") || strings.HasPrefix(low, "image ") || strings.HasPrefix(low, "sound ") ||
 			strings.HasPrefix(low, "music ") || strings.HasPrefix(low, "video ") || strings.HasPrefix(low, "font ") || strings.HasPrefix(low, "shader ") {
-			buf += " " + ts
+			buf += " " + nl
 			p.nextLine()
 			continue
 		}
@@ -675,8 +571,7 @@ func (p *Parser) parseWith(firstLine string) ([]Asset, error) {
 				}
 			}
 		}
-		a := Asset{Kind: typ, Path: path, Name: name}
-		assets = append(assets, a)
+		assets = append(assets, Asset{Kind: typ, Path: path, Name: name})
 	}
 	return assets, nil
 }
@@ -722,6 +617,7 @@ func (p *Parser) parseObject(firstLine string) (*ObjectDef, error) {
 	if len(parts) >= 4 && parts[2] == "like" {
 		like = parts[3]
 	}
+	// consume until opening brace
 	if !strings.Contains(l, "{") {
 		for p.hasMore() {
 			nl := p.nextLine()
@@ -730,6 +626,7 @@ func (p *Parser) parseObject(firstLine string) (*ObjectDef, error) {
 			}
 		}
 	}
+
 	obj := &ObjectDef{
 		Name:       name,
 		Like:       like,
@@ -737,30 +634,31 @@ func (p *Parser) parseObject(firstLine string) (*ObjectDef, error) {
 		Abilities:  map[string]*Ability{},
 		Reactions:  map[string][]Stmt{},
 	}
+
 	for p.hasMore() {
-		line := p.nextLine()
-		trim := strings.TrimSpace(line)
-		if trim == "" {
+		line := strings.TrimSpace(p.nextLine())
+		if line == "" {
 			continue
 		}
-		if strings.HasPrefix(trim, "~") && strings.HasSuffix(trim, "~") {
+		low := strings.ToLower(line)
+		if strings.HasPrefix(low, "~") && strings.HasSuffix(low, "~") {
 			continue
 		}
-		if strings.HasPrefix(trim, "}") {
+		if strings.HasPrefix(line, "}") {
 			break
 		}
-		low := strings.ToLower(trim)
 		if strings.Contains(low, " has:") || strings.Contains(low, " has :") || strings.Contains(low, " has: [") {
+			// prototype expects one property per line inside []
 			for p.hasMore() {
-				l2 := p.nextLine()
-				t2 := strings.TrimSpace(l2)
-				if t2 == "" {
+				l2 := strings.TrimSpace(p.nextLine())
+				if l2 == "" {
 					continue
 				}
+				t2 := strings.TrimSpace(l2)
 				if strings.HasPrefix(t2, "~") && strings.HasSuffix(t2, "~") {
 					continue
 				}
-				if strings.HasPrefix(t2, "]") || strings.HasPrefix(t2, "]") {
+				if strings.HasPrefix(t2, "]") {
 					break
 				}
 				if strings.Contains(t2, " is ") {
@@ -768,30 +666,29 @@ func (p *Parser) parseObject(firstLine string) (*ObjectDef, error) {
 					prop := strings.TrimSpace(parts[0])
 					expr := strings.TrimSpace(parts[1])
 					val := Value{}
-					if strings.HasPrefix(expr, "\"") && strings.HasSuffix(expr, "\"") {
+					if strings.HasPrefix(expr, "\"") && strings.HasSuffix(expr, "\"") && len(expr) >= 2 {
 						val.Type = "string"
 						val.Str = expr[1 : len(expr)-1]
+					} else if f, err := strconv.ParseFloat(expr, 64); err == nil {
+						val.Type = "number"
+						val.Number = f
 					} else {
-						if f, err := strconv.ParseFloat(expr, 64); err == nil {
-							val.Type = "number"
-							val.Number = f
-						} else {
-							val.Type = "string"
-							val.Str = expr
-						}
+						val.Type = "string"
+						val.Str = expr
 					}
 					obj.Properties[prop] = val
 				}
 			}
 			continue
 		}
+
 		if strings.Contains(low, " can:") || strings.Contains(low, " can :") {
 			for p.hasMore() {
-				l2 := p.nextLine()
-				t2 := strings.TrimSpace(l2)
-				if t2 == "" {
+				l2 := strings.TrimSpace(p.nextLine())
+				if l2 == "" {
 					continue
 				}
+				t2 := strings.TrimSpace(l2)
 				if strings.HasPrefix(t2, "~") && strings.HasSuffix(t2, "~") {
 					continue
 				}
@@ -807,19 +704,18 @@ func (p *Parser) parseObject(firstLine string) (*ObjectDef, error) {
 					}
 					ab := &Ability{Name: methodName, Statements: []Stmt{}}
 					for p.hasMore() {
-						l3 := p.nextLine()
-						t3 := strings.TrimSpace(l3)
-						if t3 == "" {
+						l3 := strings.TrimSpace(p.nextLine())
+						if l3 == "" {
 							continue
 						}
+						t3 := strings.TrimSpace(l3)
 						if strings.HasPrefix(t3, "~") && strings.HasSuffix(t3, "~") {
 							continue
 						}
 						if t3 == "]" {
 							break
 						}
-						st, err := parseStmt(t3)
-						if err == nil && st != nil {
+						if st, err := parseStmt(l3); err == nil && st != nil {
 							ab.Statements = append(ab.Statements, st)
 						}
 					}
@@ -828,43 +724,42 @@ func (p *Parser) parseObject(firstLine string) (*ObjectDef, error) {
 			}
 			continue
 		}
+
 		if strings.HasPrefix(low, "on ") || strings.HasPrefix(low, "when ") || strings.HasPrefix(low, "whenever ") {
 			trigger := ""
-			parts := strings.Fields(trim)
+			parts := strings.Fields(line)
 			if len(parts) >= 2 {
 				trigger = parts[1]
 			}
 			stmts := []Stmt{}
-			if strings.Contains(trim, "[") && strings.Contains(trim, "]") {
-				inner := trim[strings.Index(trim, "[")+1 : strings.LastIndex(trim, "]")]
+			// prototype handles either single-line [ ... ] block or multi-line until ]
+			if strings.Contains(line, "[") && strings.Contains(line, "]") {
+				inner := line[strings.Index(line, "[")+1 : strings.LastIndex(line, "]")]
 				lines := strings.Split(inner, "\n")
 				for _, l := range lines {
 					l = strings.TrimSpace(l)
 					if l == "" {
 						continue
 					}
-					if strings.HasPrefix(l, "~") && strings.HasSuffix(l, "~") {
-						continue
-					}
-					if s, err := parseStmt(l); err == nil && s != nil {
-						stmts = append(stmts, s)
+					if st, err := parseStmt(l); err == nil && st != nil {
+						stmts = append(stmts, st)
 					}
 				}
 			} else {
 				for p.hasMore() {
-					l2 := p.nextLine()
-					t2 := strings.TrimSpace(l2)
-					if t2 == "" {
+					l2 := strings.TrimSpace(p.nextLine())
+					if l2 == "" {
 						continue
 					}
+					t2 := strings.TrimSpace(l2)
 					if strings.HasPrefix(t2, "~") && strings.HasSuffix(t2, "~") {
 						continue
 					}
 					if t2 == "]" {
 						break
 					}
-					if s, err := parseStmt(t2); err == nil && s != nil {
-						stmts = append(stmts, s)
+					if st, err := parseStmt(t2); err == nil && st != nil {
+						stmts = append(stmts, st)
 					}
 				}
 			}
@@ -872,7 +767,25 @@ func (p *Parser) parseObject(firstLine string) (*ObjectDef, error) {
 			continue
 		}
 	}
+
 	return obj, nil
+}
+
+func stringsContainsOutsideQuotes(s string, sub string) bool {
+	inQuote := false
+	for i := 0; i+len(sub) <= len(s); i++ {
+		c := s[i]
+		if c == '"' {
+			inQuote = !inQuote
+		}
+		if inQuote {
+			continue
+		}
+		if s[i:i+len(sub)] == sub {
+			return true
+		}
+	}
+	return false
 }
 
 func parseGlobalStatement(line string) (Stmt, error) {
@@ -894,38 +807,17 @@ func parseGlobalStatement(line string) (Stmt, error) {
 	}
 	// assignment: supports " is " and " = "
 	if strings.Contains(lower, " is ") || stringsContainsOutsideQuotes(line, "=") {
-		// handle "=" specially to avoid matching inside strings
 		if stringsContainsOutsideQuotes(line, "=") && !strings.Contains(lower, " is ") {
 			parts := strings.SplitN(line, "=", 2)
-			lhs := strings.TrimSpace(parts[0])
-			expr := strings.TrimSpace(parts[1])
-			return &AssignStmt{Lhs: lhs, Expr: expr}, nil
+			return &AssignStmt{Lhs: strings.TrimSpace(parts[0]), Expr: strings.TrimSpace(parts[1])}, nil
 		}
 		parts := strings.SplitN(line, " is ", 2)
 		if len(parts) == 2 {
-			lhs := strings.TrimSpace(parts[0])
-			expr := strings.TrimSpace(parts[1])
-			return &AssignStmt{Lhs: lhs, Expr: expr}, nil
+			return &AssignStmt{Lhs: strings.TrimSpace(parts[0]), Expr: strings.TrimSpace(parts[1])}, nil
 		}
 	}
-	return nil, errors.New("not a global stmt")
-}
 
-func stringsContainsOutsideQuotes(s string, sub string) bool {
-	inQuote := false
-	for i := 0; i+len(sub) <= len(s); i++ {
-		c := s[i]
-		if c == '"' {
-			inQuote = !inQuote
-		}
-		if inQuote {
-			continue
-		}
-		if s[i:i+len(sub)] == sub {
-			return true
-		}
-	}
-	return false
+	return nil, errors.New("not a global stmt")
 }
 
 func parseStmt(line string) (Stmt, error) {
@@ -963,7 +855,6 @@ func parseStmt(line string) (Stmt, error) {
 			return &TellStmt{Target: target, Action: action, Args: args}, nil
 		}
 	}
-	// assignment inside objects: accept " is " or "="
 	if strings.Contains(low, " is ") || stringsContainsOutsideQuotes(line, "=") {
 		if stringsContainsOutsideQuotes(line, "=") && !strings.Contains(low, " is ") {
 			parts := strings.SplitN(line, "=", 2)
@@ -972,33 +863,59 @@ func parseStmt(line string) (Stmt, error) {
 		parts := strings.SplitN(line, " is ", 2)
 		return &AssignStmt{Lhs: strings.TrimSpace(parts[0]), Expr: strings.TrimSpace(parts[1])}, nil
 	}
+
 	return nil, errors.New("unknown statement")
 }
 
+// ----------------- CLI -----------------
+
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("Usage: heinterp <file.he>")
-		return
+		fmt.Println("HE Language v2 (working interpreter via prototype)")
+		fmt.Println("Usage:")
+		fmt.Println("  he run <file.he>")
+		fmt.Println("  he help")
+		os.Exit(1)
 	}
-	srcPath := os.Args[1]
-	b, err := os.ReadFile(srcPath)
+
+	command := os.Args[1]
+	switch command {
+	case "run":
+		if len(os.Args) < 3 {
+			fmt.Println("Error: missing file argument for run")
+			os.Exit(1)
+		}
+		runFile(os.Args[2])
+	case "help", "-h", "--help":
+		printHelp()
+	default:
+		fmt.Printf("Unknown command: %s\n", command)
+		printHelp()
+		os.Exit(1)
+	}
+}
+
+func runFile(filename string) {
+	b, err := os.ReadFile(filename)
 	if err != nil {
 		fmt.Println("Error reading:", err)
-		return
+		os.Exit(1)
 	}
+
 	parser := NewParser(string(b))
 	prog, err := parser.ParseProgram()
 	if err != nil {
 		fmt.Println("Parse error:", err)
-		return
+		os.Exit(1)
 	}
+
 	rt := NewRuntime(prog)
 
 	// Run global statements
 	for _, s := range prog.Globals {
 		if err := s.Exec(rt); err != nil {
 			fmt.Println("Runtime error:", err)
-			return
+			os.Exit(1)
 		}
 	}
 
@@ -1012,7 +929,7 @@ func main() {
 	}
 
 	fmt.Println("HE program loaded. Objects:", len(rt.Objects), "Assets:", len(rt.Assets))
-	// For demo, trigger collision reaction if exists for Player or hero
+	// Optional demo hooks: if Player exists, run jump() and collision.
 	if obj, ok := rt.Objects["Player"]; ok {
 		if ab, ok := obj.Abilities["jump"]; ok {
 			fmt.Println("Running ability Player.jump() ...")
@@ -1027,4 +944,14 @@ func main() {
 			}
 		}
 	}
+}
+
+func printHelp() {
+	fmt.Println(`
+HE Language v2 (prototype interpreter)
+
+Commands:
+  he run <file.he>  - Execute a HE program
+  he help            - Show this help message
+`)
 }

@@ -1,0 +1,92 @@
+{
+  "name": "he-language",
+  "displayName": "HE (Hunter's Engine) Language",
+  "description": "Syntax highlighting, snippets, and run support for HE (.he) files.",
+  "version": "0.0.1",
+  "publisher": "ocd",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": ["Programming Languages"],
+  "main": "./extension/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "he",
+        "aliases": ["HE", "he"],
+        "extensions": [".he"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "he",
+        "scopeName": "source.he",
+        "path": "./syntaxes/he.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "he",
+        "path": "./snippets/he.json"
+      }
+    ],
+    "debuggers": [
+      {
+        "type": "he-runner",
+        "label": "HE Interpreter",
+        "program": "./extension/debugAdapter.js",
+        "runtime": "node",
+        "configurationAttributes": {
+          "launch": {
+            "required": ["program"],
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "Path to heinterp.exe"
+              },
+              "args": {
+                "type": "array",
+                "description": "Arguments for interpreter",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "he-runner",
+            "request": "launch",
+            "name": "Run HE File",
+            "program": "${workspaceFolder}/heinterp.exe",
+            "args": ["${file}"]
+          }
+        ]
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "he.runFile",
+          "when": "resourceExtname == .he",
+          "group": "navigation"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "he.runFile",
+        "title": "Run HE File"
+      }
+    ]
+  },
+  "activationEvents": [
+    "onLanguage:he",
+    "onCommand:he.runFile"
+  ],
+  "scripts": {}
+    ,
+  "dependencies": {}
+}
