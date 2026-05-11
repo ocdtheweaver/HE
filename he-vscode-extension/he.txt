@@ -1,0 +1,39 @@
+# HE VS Code Extension (files)
+
+This canvas contains a complete minimal VS Code extension you can package into a `.vsix` and install. It gives syntax highlighting, basic comment handling, bracket pairs, and a language configuration for `.he` files.
+
+---
+
+## File tree
+
+```
+he-vscode-extension/
+├─ package.json
+├─ README.md
+├─ syntaxes/
+│  └─ he.tmLanguage.json
+├─ language-configuration.json
+└─ snippets/he.json
+```
+
+
+> Replace `publisher` in package.json with your Marketplace publisher id if you plan to publish. For local packaging leave it as-is.
+
+
+Notes: HE uses `~ ... ~` comment markers for both single-line and inline block-like comments. Text editors treat this as a block comment pair.
+
+---
+
+## `syntaxes/he.tmLanguage.json` (TextMate grammar - minimal)
+
+
+This grammar is intentionally small: it highlights keywords, strings, numbers, booleans, identifiers, and your `~...~` comment pair.
+
+
+If you want, I can now:
+
+* generate a ready-to-download `.vsix` file for you (I will produce the packaged artifact contents for you to write to disk), or
+* add a richer TextMate grammar (more precise keyword groups, contexts), or
+* build an LSP (language server) for real-time diagnostics and autocompletion.
+
+Tell me which you prefer next.

@@ -1,0 +1,67 @@
+﻿~ Example HE Program ~
+~ Demonstrates platform-aware modules and object creation ~
+
+summon "ui" as he
+summon "physics" as phys
+
+~ Create a game character ~
+make Player [
+    has: [
+        name is "Hero"
+        health is 100
+        position is [0, 0, 0]
+    ]
+    
+    can: [
+        jump [
+            print name + " jumps!"
+            ~ Apply physics ~
+            phys.gravity(-9.8)
+        ]
+        
+        move(direction) [
+            print "Moving " + direction
+            ~ Update position based on direction ~
+        ]
+    ]
+    
+    on collision [
+        print "Player collided with something!"
+        health is health - 10
+        if health < 0 then [
+            print "Game Over!"
+        ]
+    ]
+]
+
+~ Main program ~
+print "Starting HE Game..."
+
+~ Platform-aware UI ~
+~ This will automatically use the correct version based on platform ~
+he.navbar(["Home", "Settings", "Profile"])
+
+~ Create player instance ~
+make hero like Player [
+    has: [
+        name is "Super Hero"
+        health is 150
+    ]
+]
+
+~ Game loop simulation ~
+wait 1 seconds
+tell hero to jump
+
+~ Wait for user input or events ~
+wait 2 seconds
+print "Game running..."
+
+~ Example of platform detection ~
+print "Running on " + platform
+
+~ Use physics module ~
+phys.gravity(9.8)
+if phys.collision("hero", "enemy") then [
+    print "Collision detected!"
+]

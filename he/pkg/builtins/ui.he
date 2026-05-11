@@ -1,0 +1,66 @@
+﻿~ HE Mobile Module ~
+~ Provides mobile-specific UI components and utilities ~
+
+module ui {
+    module mobile {
+        ~ Navigation Bar Component ~
+        fn navbar(items) [
+            print "Mobile Navigation Bar"
+            print "Items: " + items
+            ~ In a real implementation, this would render a mobile navbar ~
+            ~ with platform-specific styling and behavior ~
+        ]
+        
+        ~ Mobile Button Component ~
+        fn button(label, action) [
+            print "Mobile Button: " + label
+            ~ When tapped, execute the action ~
+            tell runtime to action
+        ]
+        
+        ~ Mobile-specific gesture handler ~
+        fn handleSwipe(direction) [
+            if direction is "left" then [
+                print "Swiped left - showing previous screen"
+            ]
+            if direction is "right" then [
+                print "Swiped right - showing next screen"
+            ]
+        ]
+    
+    module web {
+        ~ Web Navigation Bar Component ~
+        fn navbar(items) [
+            print "Web Navigation Bar"
+            print "Items: " + items
+            ~ This would render an HTML navbar ~
+        ]
+        
+        ~ Web Button Component ~
+        fn button(label, action) [
+            print "Web Button: " + label
+            ~ When clicked, execute the action ~
+            tell runtime to action
+        ]
+    }
+    
+    module desktop {
+        ~ Desktop Navigation Bar Component ~
+        fn navbar(items) [
+            print "Desktop Navigation Bar"
+            print "Items: " + items
+            ~ This would render a desktop application navbar ~
+        ]
+    }
+    
+    ~ Platform-agnostic utility functions ~
+    fn log(message) [
+        print "[HE] " + message
+    ]
+    
+    fn formatNumber(num) [
+        ~ Format number with commas ~
+        return num as string
+    ]
+}
+}
