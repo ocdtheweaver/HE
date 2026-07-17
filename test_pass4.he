@@ -1,0 +1,113 @@
+~ Pass 4 — is between, anonymous abilities, multi-assign, remember/recall/forget ~
+
+~ ── is between ──────────────────────────────────────────── ~
+set temp to 22
+if temp is between 18 and 30 then [
+  say "Comfortable temperature: {temp}°"
+] else [
+  say "Too hot or too cold"
+]
+
+set age to 17
+if age is between 13 and 17 then [
+  say "Teenager"
+]
+
+~ ── anonymous abilities ──────────────────────────────────── ~
+set greet to ability(name) [
+  return "Hello, {name}!"
+]
+
+set msg to greet("Hunter")
+say msg
+
+set double to ability(n) [
+  return n * 2
+]
+
+say "Double 21 = {double(21)}"
+
+~ ── abilities as values passed around ───────────────────── ~
+set apply to ability(fn, value) [
+  return fn(value)
+]
+
+set triple to ability(n) [ return n * 3 ]
+say "Triple 7 via apply = {apply(triple, 7)}"
+
+~ ── multi-assign ─────────────────────────────────────────── ~
+set x, y to 10, 20
+say "x={x} y={y}"
+
+~ swap via multi-assign ~
+set x, y to y, x
+say "After swap: x={x} y={y}"
+
+set first, second, third to "alpha", "beta", "gamma"
+say "Multi: {first}, {second}, {third}"
+
+~ ── multiple return values ───────────────────────────────── ~
+create Calculator [
+  can: [
+    divmod(a, b) [
+      set q to a / b
+      set r to a - (q * b)
+      return q, r
+    ]
+    minmax(list) [
+      summon "list" as lst
+      set mn to lst.first(list)
+      set mx to lst.last(list)
+      for each item in list [
+        if item < mn then [ set mn to item ]
+        if item > mx then [ set mx to item ]
+      ]
+      return mn, mx
+    ]
+  ]
+]
+
+set quotient, remainder to Calculator.divmod(17, 5)
+say "17 ÷ 5 = {quotient} remainder {remainder}"
+
+set lo, hi to Calculator.minmax([4, 1, 9, 2, 7, 3])
+say "Min={lo} Max={hi}"
+
+~ ── remember / recall / forget ──────────────────────────── ~
+set highscore to 0
+set playername to "Hunter"
+
+tell Calculator to divmod with 100, 7
+set highscore to 750
+remember highscore
+remember playername
+
+~ Reset variables to prove recall works ~
+set highscore to 0
+set playername to "Unknown"
+say "Before recall: score={highscore} name={playername}"
+
+recall highscore
+recall playername
+say "After recall:  score={highscore} name={playername}"
+
+forget highscore
+forget playername
+
+~ ── is between in loops ──────────────────────────────────── ~
+set count to 0
+for each n from 1 to 100 [
+  if n is between 40 and 60 then [
+    grow count by 1
+  ]
+]
+say "Numbers between 40 and 60: {count}"
+
+~ ── anonymous ability with closure-like behaviour ────────── ~
+set multiplier to 5
+set scale to ability(n) [
+  return n * multiplier
+]
+say "scale(8) = {scale(8)}"
+
+say "All Pass 4 tests passed!"

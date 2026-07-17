@@ -1,0 +1,5 @@
+﻿he.exe
+*.hex
+*.hbc
+vscode-he/node_modules/
+vscode-he/package-lock.json

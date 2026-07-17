@@ -1,0 +1,66 @@
+~ Pass 9 — VM gap closures: dynamic 'is one of', field iteration,
+           file modules, and 'ask' all compiled to real bytecode ~
+
+~ ── dynamic list membership (was: literal-only) ──────────── ~
+set fruits to ["apple", "banana", "cherry"]
+set fav to "banana"
+if fav is one of fruits then [
+  say "Dynamic membership works: {fav} is a fruit"
+]
+
+set numbers to [10, 20, 30]
+set target to 99
+if not (target is one of numbers) then [
+  say "Correctly absent: {target}"
+]
+
+~ Membership built from a function-returned list ~
+summon "list" as lst
+set extended to lst.add(fruits, "date")
+if "date" is one of extended then [
+  say "Membership works on computed lists too"
+]
+
+~ ── object field iteration (was: interpreter-only) ────────── ~
+create Settings [
+  has: [
+    theme is "dark"
+    fontSize is 14
+    autosave is true
+  ]
+]
+
+say "Settings:"
+for each key, val in Settings [
+  say "  {key} = {val}"
+]
+
+set fieldCount to 0
+for each k, v in Settings [
+  grow fieldCount by 1
+]
+say "Total fields: {fieldCount}"
+
+~ ── ask / stdin input (was: interpreter-only) ──────────────── ~
+ask "Enter a number:" as userInput
+say "You entered: {userInput}"
+
+~ ── combining all three in one program ─────────────────────── ~
+create Inventory [
+  has: [
+    sword is "equipped"
+    shield is "equipped"
+    potion is "available"
+  ]
+]
+
+set itemNames to []
+for each key, val in Inventory [
+  set itemNames to lst.add(itemNames, key)
+]
+
+if "sword" is one of itemNames then [
+  say "Sword confirmed in inventory"
+]
+
+say "All Pass 9 tests passed!"

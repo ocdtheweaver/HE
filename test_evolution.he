@@ -1,0 +1,96 @@
+~ Evolution pass — testing all new features ~
+
+~ ── for each ────────────────────────────────── ~
+set fruits to ["apple", "banana", "cherry"]
+for each fruit in fruits [
+  say "Fruit: " + fruit
+]
+
+~ ── is not ──────────────────────────────────── ~
+set mood to "happy"
+if mood is not "sad" then [
+  say "Feeling good!"
+]
+
+~ ── dot assignment ──────────────────────────── ~
+create Player [
+  has: [
+    name is "Hero"
+    health starts as 100
+    score starts as 0
+  ]
+  can: [
+    greet [
+      say "I am " + name + " with " + health + " health"
+    ]
+    heal(amount) [
+      grow health by amount
+    ]
+  ]
+]
+
+tell Player to greet
+set Player.health to 80
+tell Player to greet
+
+~ ── give X to obj.field ─────────────────────── ~
+give 200 to Player.score
+say "Score is now: " + Player.score
+
+~ ── grow obj.field by N ─────────────────────── ~
+grow Player.score by 50
+say "Score after growing: " + Player.score
+
+~ ── dot field read in expressions ───────────── ~
+if Player.health > 50 then [
+  say "Player is healthy"
+] else [
+  say "Player needs healing"
+]
+
+~ ── tell with argument (heal action) ───────── ~
+tell Player to heal with 15
+tell Player to greet
+
+~ ── for each on number list ─────────────────── ~
+set total to 0
+for each num in [10, 20, 30] [
+  grow total by num
+]
+say "Total: " + total
+
+~ ── nested objects using inheritance ─────────── ~
+create Warrior like Player [
+  has: [
+    weapon is "sword"
+    attack starts as 25
+  ]
+  can: [
+    strike [
+      say name + " strikes with " + weapon + " for " + attack + " damage!"
+    ]
+  ]
+]
+
+set Warrior.name to "Aldric"
+tell Warrior to greet
+tell Warrior to strike
+
+~ ── math module with dot fields ─────────────── ~
+summon "math" as m
+set Warrior.attack to m.round(m.sqrt(625))
+say "Warrior attack after sqrt(625) rounded: " + Warrior.attack
+
+~ ── text module on a field ───────────────────── ~
+summon "text" as t
+say "Warrior name uppercased: " + t.upper(Warrior.name)
+
+~ ── list module with for each ────────────────── ~
+summon "list" as lst
+set inventory to ["sword", "shield", "potion"]
+say "Inventory has " + lst.length(inventory) + " items"
+for each item in inventory [
+  say "  - " + item
+]
+
+say "All evolution tests passed!"

@@ -1,0 +1,108 @@
+~ Pass 7 — becomes, repeat-as-counter, nested quotes in interpolation,
+           recursion guard, type constraints ~
+
+~ ── becomes — mutation shorthand ───────────────────────── ~
+set score to 0
+score becomes 42
+say "Score: {score}"
+
+set name to "Hunter"
+name becomes "Alex"
+say "Name: {name}"
+
+~ ── repeat N times as i — loop counter exposed ──────────── ~
+set total to 0
+repeat 5 times as i [
+  grow total by i
+  say "Step {i}: total is {total}"
+]
+say "Final total: {total}"
+
+~ ── nested quotes in string interpolation ────────────────── ~
+summon "text" as t
+set csv to "one,two,three"
+set parts to csv.split(",")
+say "Parts: {parts.join(" - ")}"
+say "Length: {csv.split(",").length()}"
+
+set result to t.replace("hello world", "world", "HE")
+say "Replaced: {result}"
+
+~ ── type constraints — soft enforcement ─────────────────── ~
+create TypedBox [
+  has: [
+    count is 0
+    label is "default"
+    active is true
+  ]
+  can: [
+    increment [
+      grow count by 1
+    ]
+    describe [
+      say "Box '{label}' count={count} active={active}"
+    ]
+  ]
+]
+
+tell TypedBox to describe
+tell TypedBox to increment
+tell TypedBox to increment
+tell TypedBox to describe
+
+~ Assign correct type ~
+set TypedBox.label to "MyBox"
+tell TypedBox to describe
+
+~ ── recursion — safe depth limit ────────────────────────── ~
+create Math [
+  can: [
+    factorial(n) [
+      if n <= 1 then [
+        return 1
+      ]
+      return n * Math.factorial(n - 1)
+    ]
+    fib(n) [
+      if n <= 1 then [ return n ]
+      return Math.fib(n - 1) + Math.fib(n - 2)
+    ]
+  ]
+]
+
+say "5! = {Math.factorial(5)}"
+say "10! = {Math.factorial(10)}"
+say "fib(8) = {Math.fib(8)}"
+
+~ ── becomes in a loop ─────────────────────────────────────── ~
+set x to 1
+repeat 4 times as turn [
+  x becomes x * 2
+  say "x after turn {turn}: {x}"
+]
+
+~ ── combining repeat-as with conditions ──────────────────── ~
+set hits to 0
+repeat 10 times as n [
+  if n is between 3 and 7 then [
+    grow hits by 1
+  ]
+]
+say "Hits between 3 and 7 (out of 10): {hits}"
+
+~ ── nested interpolation with method chains ──────────────── ~
+set words to ["hello", "world", "he"]
+set upper_words to []
+summon "list" as lst
+
+for each w in words [
+  set upper_words to lst.add(upper_words, w.upper())
+]
+say "Upper: {upper_words.join(" | ")}"
+
+~ ── repeat counter in expressions ───────────────────────── ~
+repeat 3 times as round [
+  say "Round {round} of 3"
+]
+
+say "All Pass 7 tests passed!"

@@ -1,0 +1,63 @@
+Windows Registry Editor Version 5.00
+
+; HE Language — Windows File Type Registration
+; This registers .he files so Windows Explorer shows the wolf icon
+; and knows how to open them with the 'he' runtime.
+;
+; BEFORE RUNNING:
+;   1. Place he.exe somewhere permanent, e.g. C:\Program Files\HE\he.exe
+;   2. Place hefile.ico in the same folder, e.g. C:\Program Files\HE\hefile.ico
+;   3. Edit the paths below if you installed to a different location
+;   4. Double-click this .reg file and click Yes when prompted
+;
+; To UNREGISTER, run he_unregister.reg
+
+; ── File extension association ────────────────────────────────────────────────
+
+[HKEY_CLASSES_ROOT\.he]
+@="HESourceFile"
+"Content Type"="text/x-he"
+"PerceivedType"="text"
+
+; ── File type definition ──────────────────────────────────────────────────────
+
+[HKEY_CLASSES_ROOT\HESourceFile]
+@="HE Source File"
+
+[HKEY_CLASSES_ROOT\HESourceFile\DefaultIcon]
+@="C:\\Program Files\\HE\\hefile.ico,0"
+
+; ── Open action: he run <file> ────────────────────────────────────────────────
+
+[HKEY_CLASSES_ROOT\HESourceFile\shell]
+@="open"
+
+[HKEY_CLASSES_ROOT\HESourceFile\shell\open]
+@="Run with HE"
+"Icon"="C:\\Program Files\\HE\\hefile.ico,0"
+
+[HKEY_CLASSES_ROOT\HESourceFile\shell\open\command]
+@="\"C:\\Program Files\\HE\\he.exe\" run \"%1\""
+
+; ── Check action: he check <file> ─────────────────────────────────────────────
+
+[HKEY_CLASSES_ROOT\HESourceFile\shell\check]
+@="Check with HE"
+"Icon"="C:\\Program Files\\HE\\hefile.ico,0"
+
+[HKEY_CLASSES_ROOT\HESourceFile\shell\check\command]
+@="cmd.exe /k \"C:\\Program Files\\HE\\he.exe\" check \"%1\""
+
+; ── Edit in VS Code ───────────────────────────────────────────────────────────
+
+[HKEY_CLASSES_ROOT\HESourceFile\shell\edit]
+@="Edit in VS Code"
+"Icon"="code.exe,0"
+
+[HKEY_CLASSES_ROOT\HESourceFile\shell\edit\command]
+@="code \"%1\""
+
+; ── Notify Windows to refresh icon cache ─────────────────────────────────────
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\KindMap]
+".he"="document"

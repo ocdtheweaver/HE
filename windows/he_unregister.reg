@@ -1,0 +1,7 @@
+Windows Registry Editor Version 5.00
+
+; HE Language — Unregister .he file type
+; Run this to remove the HE file association from Windows
+
+[-HKEY_CLASSES_ROOT\.he]
+[-HKEY_CLASSES_ROOT\HESourceFile]

@@ -1,0 +1,47 @@
+~ protected.he — defines what each #protected[N] tag actually means.
+   HE itself doesn't understand subscriptions or billing — it only knows
+   how to ask "is this tag currently granted?" This file is where you,
+   the developer, answer that question for each tag you use.
+
+   Summon this file like any other module:
+     summon "protected.he"
+   and every #protected[N] tag in your program will be looked up here
+   by name.
+
+   THIS PASS: syntax only. Nothing reads or enforces this file yet —
+   it exists so the format is locked in before enforcement is built. ~
+
+
+~ The base/free tier. Every program that uses bare #protected (no
+   number) is referring to this entry. ~
+create protected [
+  has: [
+    mode is "cached"
+    endpoint is "https://api.myapp.com/entitlement"
+    graceSeconds is 0
+  ]
+]
+
+
+~ Plan A — a paid tier where losing connection should NOT lock people
+   out of things they already unlocked (like a Wattpad library staying
+   readable, or WhatsApp messages staying visible offline). ~
+create protected1 [
+  has: [
+    mode is "cached"
+    endpoint is "https://api.myapp.com/plan-a"
+    graceSeconds is 604800
+  ]
+]
+
+
+~ Plan B — something fairness- or integrity-sensitive, where no
+   connection must mean no access (like eFootball ranked mode, or
+   anything an attacker would want to fake offline). ~
+create protected2 [
+  has: [
+    mode is "live"
+    endpoint is "https://api.myapp.com/plan-b"
+    graceSeconds is 0
+  ]
+]

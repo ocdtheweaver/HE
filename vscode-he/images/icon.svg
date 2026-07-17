@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- Background: rounded square in HE brand orange -->
+  <rect width="128" height="128" rx="22" ry="22" fill="#DA7756"/>
+  <!-- H -->
+  <text
+    x="10"
+    y="96"
+    font-family="'SF Mono', 'Fira Code', 'Consolas', monospace"
+    font-size="82"
+    font-weight="bold"
+    fill="white"
+    letter-spacing="-2"
+  >HE</text>
+</svg>

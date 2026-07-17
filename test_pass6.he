@@ -1,0 +1,138 @@
+~ Pass 6 — closures, method chains, membership, with scope, field iteration, VM ~
+
+~ ── String method chains ────────────────────────────────── ~
+set word to "hello world"
+say word.upper()
+say word.length()
+say word.contains("world")
+say word.replace("world", "HE")
+say word.split(" ").length()
+
+~ Chaining: literal.method() ~
+say "  spaces  ".trim()
+say "one,two,three".split(",").length()
+
+~ Number methods ~
+set n to -42
+say n.abs()
+say n.floor()
+say (3.7).round()
+say (16.0).sqrt()
+
+~ List method chains ~
+set items to ["c", "a", "b"]
+say items.length()
+say items.first()
+say items.last()
+say items.contains("a")
+set items to items.add("d")
+say items.length()
+say items.reverse().first()
+
+~ ── is one of ───────────────────────────────────────────── ~
+set color to "blue"
+if color is one of ["red", "green", "blue"] then [
+  say "Primary color: {color}"
+]
+
+set day to "Saturday"
+if day is one of ["Saturday", "Sunday"] then [
+  say "{day} is a weekend"
+]
+
+set x to 99
+if not (x is one of [1, 2, 3]) then [
+  say "{x} is not in the list"
+]
+
+~ ── with scope ──────────────────────────────────────────── ~
+summon "math" as m
+set radius to 5
+
+with m.pi() as pi [
+  set area to pi * radius * radius
+  say "Area of circle r=5: {area}"
+]
+
+set greeting to "Hello"
+with greeting + ", World!" as msg [
+  say msg
+  say msg.upper()
+]
+
+~ ── for each key, val in object fields ──────────────────── ~
+create Config [
+  has: [
+    host is "localhost"
+    port is 8080
+    debug is true
+  ]
+]
+
+say "Config fields:"
+for each key, val in Config [
+  say "  {key} = {val}"
+]
+
+~ ── closures — ability captures surrounding scope ────────── ~
+set base to 100
+
+set addBase to ability(n) [
+  return n + base
+]
+
+say "addBase(5) = {addBase(5)}"
+say "addBase(20) = {addBase(20)}"
+
+~ Change base — closed-over value updates ~
+set base to 200
+say "After base=200, addBase(5) = {addBase(5)}"
+
+~ ── closure as counter factory ──────────────────────────── ~
+set counter to 0
+
+set increment to ability() [
+  grow counter by 1
+  return counter
+]
+
+say "count: {increment()}"
+say "count: {increment()}"
+say "count: {increment()}"
+
+~ ── closures in loops ────────────────────────────────────── ~
+set multiplier to 3
+set results to []
+summon "list" as lst
+
+each i from 1 to 5 [
+  set scaled to ability(x) [ return x * multiplier ]
+  set results to lst.add(results, scaled(i))
+]
+
+say "Scaled results: {results}"
+
+~ ── method chain on result of computation ───────────────── ~
+set nums to [10, 20, 30, 40, 50]
+say "Reversed first: {nums.reverse().first()}"
+set sep to ", "
+say "Joined: {nums.join(sep)}"
+
+~ ── combining features ──────────────────────────────────── ~
+set words to ["apple", "BANANA", "Cherry", "date"]
+set normalized to []
+
+for each w in words [
+  set normalized to lst.add(normalized, w.lower())
+]
+
+set comma to ", "
+say "Normalized: {normalized.join(comma)}"
+
+for each w in normalized [
+  if w is one of ["apple", "date"] then [
+    say "{w} is a common fruit"
+  ]
+]
+
+say "All Pass 6 tests passed!"

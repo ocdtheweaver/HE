@@ -17,12 +17,7 @@ type Lexer struct {
 }
 
 func New(src string) *Lexer {
-	return &Lexer{
-		src:  src,
-		i:    0,
-		line: 1,
-		col:  1,
-	}
+	return &Lexer{src: src, i: 0, line: 1, col: 1}
 }
 
 func (l *Lexer) peekByte() byte {
@@ -50,37 +45,27 @@ func (l *Lexer) nextByte() byte {
 func (l *Lexer) skipWhitespace() {
 	for {
 		b := l.peekByte()
-		if b == 0 {
-			return
-		}
 		if b == ' ' || b == '\t' || b == '\r' || b == '\n' {
 			l.nextByte()
-			continue
+		} else {
+			return
 		}
-		return
 	}
 }
 
-// Comments: "~" ~"~"* "~"
-// i.e. a tilde, then any number of tildes, then a final tilde.
+// Comments: ~ anything ~
 func (l *Lexer) trySkipComment() bool {
 	if l.peekByte() != '~' {
 		return false
 	}
-
-	// Consume opening '~'
-	l.nextByte()
-
-	// Consume until the next '~' (allows arbitrary content in between).
-	// This matches `~ ... ~` usage in game.he.
+	l.nextByte() // consume opening ~
 	for {
 		b := l.peekByte()
 		if b == 0 {
-			// Unterminated comment; let lexer fail later.
 			return false
 		}
 		if b == '~' {
-			l.nextByte() // consume closing '~'
+			l.nextByte()
 			return true
 		}
 		l.nextByte()
@@ -90,10 +75,9 @@ func (l *Lexer) trySkipComment() bool {
 func (l *Lexer) skipWhitespaceAndComments() {
 	for {
 		l.skipWhitespace()
-		if l.trySkipComment() {
-			continue
+		if !l.trySkipComment() {
+			return
 		}
-		return
 	}
 }
 
@@ -108,75 +92,190 @@ func isIdentChar(b byte) bool {
 func (l *Lexer) readNumber() token.Token {
 	startLine, startCol := l.line, l.col
 	var sb strings.Builder
-
-	for {
-		b := l.peekByte()
-		if b >= '0' && b <= '9' {
+	for b := l.peekByte(); b >= '0' && b <= '9'; b = l.peekByte() {
+		sb.WriteByte(l.nextByte())
+	}
+	if l.peekByte() == '.' && l.i+1 < len(l.src) && l.src[l.i+1] >= '0' && l.src[l.i+1] <= '9' {
+		sb.WriteByte(l.nextByte())
+		for b := l.peekByte(); b >= '0' && b <= '9'; b = l.peekByte() {
 			sb.WriteByte(l.nextByte())
-			continue
-		}
-		break
-	}
-
-	// Optional fractional part: '.' Digit+
-	if l.peekByte() == '.' {
-		// Need at least one digit after '.'
-		if l.i+1 < len(l.src) {
-			next := l.src[l.i+1]
-			if next >= '0' && next <= '9' {
-				sb.WriteByte(l.nextByte()) // '.'
-				for {
-					b := l.peekByte()
-					if b >= '0' && b <= '9' {
-						sb.WriteByte(l.nextByte())
-						continue
-					}
-					break
-				}
-			}
 		}
 	}
-
-	return token.Token{
-		Type:   token.NUMBER,
-		Lexeme: sb.String(),
-		Line:   startLine,
-		Column: startCol,
-	}
+	return token.Token{Type: token.NUMBER, Lexeme: sb.String(), Line: startLine, Column: startCol}
 }
 
+// readString reads a string literal.
+// If the string contains {varName} interpolation, the Lexeme will contain
+// the raw source including braces, and Type will be INTERP_STRING.
+// The parser then splits it into segments.
 func (l *Lexer) readString() (token.Token, error) {
 	startLine, startCol := l.line, l.col
-	_ = l.nextByte() // consume opening '"'
-
+	l.nextByte() // consume opening "
 	var sb strings.Builder
+	hasInterp := false
 	for {
 		b := l.peekByte()
 		if b == 0 {
 			return token.Token{}, fmt.Errorf("unterminated string at %d:%d", startLine, startCol)
 		}
 		if b == '"' {
-			l.nextByte() // closing
+			l.nextByte()
 			break
 		}
-		// Grammar: '"' [^"]* '"'
-		// We'll allow any char except quote.
+		if b == '{' {
+			hasInterp = true
+			sb.WriteByte(l.nextByte()) // {
+			// Scan until matching } — track inner strings and parens
+			// so expressions like {fn(", ")} work correctly.
+			innerStr := false
+			parenDepth := 0
+			for {
+				c := l.peekByte()
+				if c == 0 {
+					return token.Token{}, fmt.Errorf("unclosed interpolation at %d:%d", startLine, startCol)
+				}
+				if c == '"' {
+					innerStr = !innerStr
+					sb.WriteByte(l.nextByte())
+					continue
+				}
+				if innerStr {
+					sb.WriteByte(l.nextByte())
+					continue
+				}
+				if c == '(' {
+					parenDepth++
+				}
+				if c == ')' && parenDepth > 0 {
+					parenDepth--
+				}
+				sb.WriteByte(l.nextByte())
+				if c == '}' && parenDepth == 0 {
+					break
+				}
+			}
+			continue
+		}
+		if b == '\\' {
+			l.nextByte()
+			esc := l.nextByte()
+			switch esc {
+			case 'n':
+				sb.WriteByte('\n')
+			case 't':
+				sb.WriteByte('\t')
+			case '"':
+				sb.WriteByte('"')
+			case '\\':
+				sb.WriteByte('\\')
+			default:
+				sb.WriteByte('\\')
+				sb.WriteByte(esc)
+			}
+			continue
+		}
 		sb.WriteByte(l.nextByte())
 	}
-	return token.Token{Type: token.STRING, Lexeme: sb.String(), Line: startLine, Column: startCol}, nil
+	tt := token.STRING
+	if hasInterp {
+		tt = token.INTERP_STRING
+	}
+	return token.Token{Type: tt, Lexeme: sb.String(), Line: startLine, Column: startCol}, nil
+}
+
+// keyword map — maps lowercase word to token type
+var keywords = map[string]token.TokenType{
+	// Module
+	"summon": token.K_SUMMON,
+	"named":  token.K_NAMED,
+	"as":     token.K_AS,
+
+	// Object
+	"create": token.K_CREATE,
+	"make":   token.K_MAKE,
+	"like":   token.K_LIKE,
+
+	// Sections
+	"has":       token.K_HAS,
+	"owns":      token.K_OWNS,
+	"carries":   token.K_CARRIES,
+	"remembers": token.K_REMEMBERS,
+
+	// Abilities
+	"can":  token.K_CAN,
+	"know": token.K_KNOW,
+	"how":  token.K_HOW,
+
+	// Assignment
+	"is":      token.K_IS,
+	"becomes": token.K_BECOMES,
+	"set":     token.K_SET,
+	"let":     token.K_LET,
+	"be":      token.K_BE,
+	"change":  token.K_CHANGE,
+	"grow":    token.K_GROW,
+	"shrink":  token.K_SHRINK,
+
+	// Events
+	"on":       token.K_ON,
+	"when":     token.K_WHEN,
+	"whenever": token.K_WHENEVER,
+
+	// Control flow
+	"if":     token.K_IF,
+	"then":   token.K_THEN,
+	"else":   token.K_ELSE,
+	"repeat": token.K_REPEAT,
+	"while":  token.K_WHILE,
+	"times":  token.K_TIMES,
+	"return": token.K_RETURN,
+	"check":  token.K_CHECK,
+
+	// Tell
+	"tell": token.K_CAN_TELL,
+	"to":   token.K_TO,
+
+	// Logic
+	"and": token.K_AND,
+	"or":  token.K_OR,
+	"not": token.K_NOT,
+
+	// Wait
+	"wait":    token.K_WAIT,
+	"seconds": token.K_SECONDS,
+	"frames":  token.K_FRAMES,
+
+	// Output
+	"print": token.K_PRINT,
+	"say":   token.K_SAY,
+	"show":  token.K_SHOW,
+
+	// With
+	"with": token.K_WITH,
+
+	// Assets
+	"image":  token.K_IMAGE,
+	"sound":  token.K_SOUND,
+	"music":  token.K_MUSIC,
+	"video":  token.K_VIDEO,
+	"font":   token.K_FONT,
+	"shader": token.K_SHADER,
+
+	// Special triggers
+	"collision": token.K_COLLISION,
+}
+
+// booleanWords maps to boolean literals
+var booleanWords = map[string]string{
+	"true":  "true",
+	"yes":   "true",
+	"false": "false",
+	"no":    "false",
 }
 
 func (l *Lexer) readIdentifierOrKeyword() token.Token {
 	startLine, startCol := l.line, l.col
 	var sb strings.Builder
-
-	b := l.peekByte()
-	if !isLetter(b) {
-		// shouldn't happen
-		l.nextByte()
-		return token.Token{Type: token.ILLEGAL, Lexeme: string(b), Line: startLine, Column: startCol}
-	}
-
 	sb.WriteByte(l.nextByte())
 	for {
 		b := l.peekByte()
@@ -185,102 +284,39 @@ func (l *Lexer) readIdentifierOrKeyword() token.Token {
 		}
 		sb.WriteByte(l.nextByte())
 	}
-
 	lex := sb.String()
 	low := strings.ToLower(lex)
 
-	// boolean keywords
-	switch low {
-	case "true", "yes":
-		return token.Token{Type: token.BOOLEAN, Lexeme: "true", Line: startLine, Column: startCol}
-	case "false", "no":
-		return token.Token{Type: token.BOOLEAN, Lexeme: "false", Line: startLine, Column: startCol}
+	// Boolean literals
+	if bval, ok := booleanWords[low]; ok {
+		return token.Token{Type: token.BOOLEAN, Lexeme: bval, Line: startLine, Column: startCol}
 	}
 
-	// multi-word keywords exist in the grammar; lexer maps single-word keywords only.
-	switch low {
-	case "summon":
-		return token.Token{Type: token.K_SUMMON, Lexeme: lex, Line: startLine, Column: startCol}
-	case "named":
-		return token.Token{Type: token.K_NAMED, Lexeme: lex, Line: startLine, Column: startCol}
-	case "as":
-		return token.Token{Type: token.K_AS, Lexeme: lex, Line: startLine, Column: startCol}
-	case "with":
-		return token.Token{Type: token.K_WITH, Lexeme: lex, Line: startLine, Column: startCol}
-	case "create":
-		return token.Token{Type: token.K_CREATE, Lexeme: lex, Line: startLine, Column: startCol}
-	case "make":
-		return token.Token{Type: token.K_MAKE, Lexeme: lex, Line: startLine, Column: startCol}
-	case "like":
-		return token.Token{Type: token.K_LIKE, Lexeme: lex, Line: startLine, Column: startCol}
-	case "has":
-		return token.Token{Type: token.K_HAS, Lexeme: lex, Line: startLine, Column: startCol}
-	case "owns":
-		return token.Token{Type: token.K_OWNS, Lexeme: lex, Line: startLine, Column: startCol}
-	case "carries":
-		return token.Token{Type: token.K_CARRIES, Lexeme: lex, Line: startLine, Column: startCol}
-	case "can":
-		return token.Token{Type: token.K_CAN, Lexeme: lex, Line: startLine, Column: startCol}
-	case "remembers":
-		return token.Token{Type: token.K_REMEMBERS, Lexeme: lex, Line: startLine, Column: startCol}
-	case "is":
-		return token.Token{Type: token.K_IS, Lexeme: lex, Line: startLine, Column: startCol}
-	case "starts":
-		return token.Token{Type: token.IDENT, Lexeme: lex, Line: startLine, Column: startCol}
-	case "on":
-		return token.Token{Type: token.K_ON, Lexeme: lex, Line: startLine, Column: startCol}
-	case "when":
-		return token.Token{Type: token.K_WHEN, Lexeme: lex, Line: startLine, Column: startCol}
-	case "whenever":
-		return token.Token{Type: token.K_WHENEVER, Lexeme: lex, Line: startLine, Column: startCol}
-	// NOTE: "collision" is treated as an IDENT so it can be used as a method name
-	// (e.g. phys.collision(...)). Reaction triggers still work because the parser
-	// accepts IDENT triggers too.
-	case "tell":
-		return token.Token{Type: token.K_CAN_TELL, Lexeme: lex, Line: startLine, Column: startCol}
-	case "to":
-		return token.Token{Type: token.K_TO, Lexeme: lex, Line: startLine, Column: startCol}
-	case "and":
-		return token.Token{Type: token.K_AND, Lexeme: lex, Line: startLine, Column: startCol}
-	case "or":
-		return token.Token{Type: token.K_OR, Lexeme: lex, Line: startLine, Column: startCol}
-	case "then":
-		return token.Token{Type: token.K_THEN, Lexeme: lex, Line: startLine, Column: startCol}
-	case "else":
-		return token.Token{Type: token.K_ELSE, Lexeme: lex, Line: startLine, Column: startCol}
-	case "repeat":
-		return token.Token{Type: token.K_REPEAT, Lexeme: lex, Line: startLine, Column: startCol}
-	case "while":
-		return token.Token{Type: token.K_WHILE, Lexeme: lex, Line: startLine, Column: startCol}
-	case "return":
-		return token.Token{Type: token.K_RETURN, Lexeme: lex, Line: startLine, Column: startCol}
-	case "wait":
-		return token.Token{Type: token.K_WAIT, Lexeme: lex, Line: startLine, Column: startCol}
-	case "seconds":
-		return token.Token{Type: token.K_SECONDS, Lexeme: lex, Line: startLine, Column: startCol}
-	case "frames":
-		return token.Token{Type: token.K_FRAMES, Lexeme: lex, Line: startLine, Column: startCol}
-	case "print":
-		return token.Token{Type: token.K_PRINT, Lexeme: lex, Line: startLine, Column: startCol}
-	case "say":
-		return token.Token{Type: token.K_SAY, Lexeme: lex, Line: startLine, Column: startCol}
-	case "set":
-		return token.Token{Type: token.K_SET, Lexeme: lex, Line: startLine, Column: startCol}
-	case "image":
-		return token.Token{Type: token.K_IMAGE, Lexeme: lex, Line: startLine, Column: startCol}
-	case "sound":
-		return token.Token{Type: token.K_SOUND, Lexeme: lex, Line: startLine, Column: startCol}
-	case "music":
-		return token.Token{Type: token.K_MUSIC, Lexeme: lex, Line: startLine, Column: startCol}
-	case "video":
-		return token.Token{Type: token.K_VIDEO, Lexeme: lex, Line: startLine, Column: startCol}
-	case "font":
-		return token.Token{Type: token.K_FONT, Lexeme: lex, Line: startLine, Column: startCol}
-	case "shader":
-		return token.Token{Type: token.K_SHADER, Lexeme: lex, Line: startLine, Column: startCol}
+	// Keywords
+	if tt, ok := keywords[low]; ok {
+		return token.Token{Type: tt, Lexeme: lex, Line: startLine, Column: startCol}
 	}
 
 	return token.Token{Type: token.IDENT, Lexeme: lex, Line: startLine, Column: startCol}
+}
+
+// readProtectTag reads "#protected", "#protected1", "#protected2", etc.
+// The leading '#' is consumed and not included in the Lexeme — the
+// Lexeme is just the tag name (e.g. "protected1"), so the parser/runtime
+// can use it directly as a policy-lookup key.
+func (l *Lexer) readProtectTag() token.Token {
+	startLine, startCol := l.line, l.col
+	l.nextByte() // consume '#'
+
+	var sb strings.Builder
+	for {
+		b := l.peekByte()
+		if b == 0 || !isIdentChar(b) {
+			break
+		}
+		sb.WriteByte(l.nextByte())
+	}
+	return token.Token{Type: token.PROTECT_TAG, Lexeme: sb.String(), Line: startLine, Column: startCol}
 }
 
 func (l *Lexer) NextToken() (token.Token, error) {
@@ -301,15 +337,19 @@ func (l *Lexer) NextToken() (token.Token, error) {
 	if b == '"' {
 		return l.readString()
 	}
-
 	if b >= '0' && b <= '9' {
 		return l.readNumber(), nil
 	}
-
 	if unicode.IsLetter(rune(b)) || b == '_' {
 		return l.readIdentifierOrKeyword(), nil
 	}
 
+	// Protection tags: #protected, #protected1, #protected2, ...
+	if b == '#' {
+		return l.readProtectTag(), nil
+	}
+
+	// Two-char operators
 	switch b {
 	case '=':
 		l.nextByte()
@@ -324,7 +364,6 @@ func (l *Lexer) NextToken() (token.Token, error) {
 			l.nextByte()
 			return token.Token{Type: token.NEQ, Lexeme: "!=", Line: startLine, Column: startCol}, nil
 		}
-		l.nextByte()
 		return token.Token{Type: token.BANG, Lexeme: "!", Line: startLine, Column: startCol}, nil
 	case '>':
 		l.nextByte()
@@ -359,8 +398,6 @@ func (l *Lexer) NextToken() (token.Token, error) {
 		return token.Token{Type: token.SLASH, Lexeme: "/", Line: startLine, Column: startCol}, nil
 	case '^':
 		return token.Token{Type: token.CARET, Lexeme: "^", Line: startLine, Column: startCol}, nil
-	case '!':
-		return token.Token{Type: token.BANG, Lexeme: "!", Line: startLine, Column: startCol}, nil
 	case '(':
 		return token.Token{Type: token.LPAREN, Lexeme: "(", Line: startLine, Column: startCol}, nil
 	case ')':
@@ -405,4 +442,44 @@ func (l *Lexer) Expect(tt token.TokenType) (token.Token, error) {
 		return token.Token{}, fmt.Errorf("expected %s at %d:%d, got %s (%q)", tt, t.Line, t.Column, t.Type, t.Lexeme)
 	}
 	return t, nil
+}
+
+func init() {
+	// Register new keywords added after initial build
+	keywords["for"]  = token.K_FOR
+	keywords["each"] = token.K_EACH
+	keywords["in"]   = token.K_IN
+	keywords["ask"]  = token.K_ASK
+	keywords["give"] = token.K_GIVE
+	keywords["done"] = token.K_DONE
+	keywords["stop"] = token.K_STOP
+}
+
+func init() {
+	// Pass 2 keywords
+	keywords["for"]  = token.K_FOR
+	keywords["each"] = token.K_EACH
+	keywords["in"]   = token.K_IN
+	keywords["ask"]  = token.K_ASK
+	keywords["give"] = token.K_GIVE
+	keywords["done"] = token.K_DONE
+	keywords["stop"] = token.K_STOP
+	// Pass 3 keywords
+	keywords["from"]  = token.K_FROM
+	keywords["upto"]  = token.K_UPTO
+	keywords["try"]   = token.K_TRY
+	keywords["fails"] = token.K_FAILS
+	keywords["step"]  = token.K_STEP
+	keywords["until"]   = token.K_UNTIL
+	// Pass 4 keywords
+	keywords["between"] = token.K_BETWEEN
+	keywords["ability"] = token.K_ABILITY
+	keywords["remember"] = token.K_REMEMBER
+	keywords["forget"]  = token.K_FORGET
+	// Pass 5 keywords
+	keywords["catch"]   = token.K_CATCH
+	// Pass 6 keywords
+	keywords["one"]     = token.K_ONE
+	keywords["of"]      = token.K_OF
+	keywords["fields"]  = token.K_FIELDS
 }

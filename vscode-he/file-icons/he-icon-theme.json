@@ -1,0 +1,15 @@
+{
+  "information_for_contributors": "HE language file icon theme — makes .he files show the WolfHead wolf icon instead of the default notebook icon.",
+  "iconDefinitions": {
+    "_he_file": {
+      "iconPath": "../images/file-icon.png"
+    }
+  },
+  "fileExtensions": {
+    "he": "_he_file"
+  },
+  "file": "_he_file",
+  "languageIds": {
+    "he": "_he_file"
+  }
+}

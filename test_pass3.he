@@ -1,0 +1,102 @@
+~ Pass 3 tests — range loops, try/or, interpolation, wolfhead ~
+
+~ ── String interpolation ─────────────────────────────────── ~
+set name to "Hunter"
+set score to 42
+say "Hello, {name}! Your score is {score}."
+say "Pi is roughly {pi}."
+
+~ ── for each i from N to M ──────────────────────────────── ~
+set total to 0
+for each i from 1 to 5 [
+  grow total by i
+]
+say "Sum 1 to 5: {total}"
+
+~ ── for each with step ──────────────────────────────────── ~
+set evens to 0
+for each n from 2 to 10 step 2 [
+  grow evens by n
+]
+say "Sum of evens 2-10: {evens}"
+
+~ ── repeat until ────────────────────────────────────────── ~
+set countdown to 5
+repeat until countdown == 0 [
+  shrink countdown by 1
+]
+say "Countdown done: {countdown}"
+
+~ ── try / or if it fails ─────────────────────────────────── ~
+summon "io" as io
+
+try [
+  set contents to io.read("this_file_does_not_exist.txt")
+  say "Read: {contents}"
+] or if it fails [
+  say "Caught error: {error}"
+]
+
+~ ── try without error (success path) ────────────────────── ~
+try [
+  set x to 10
+  grow x by 5
+  say "Try succeeded: {x}"
+] or [
+  say "This should not run"
+]
+
+~ ── WolfHead OS module ───────────────────────────────────── ~
+summon "wolfhead" as wh
+
+set ws to wh.workspace()
+say "Current workspace: {ws.name}"
+
+wh.notify("Test notification", "HE Pass 3 complete!")
+
+set contexts to wh.context()
+say "Available contexts: {contexts}"
+
+set plat to wh.platform()
+say "Running on: {plat}"
+
+~ ── String interpolation in object fields ────────────────── ~
+create Hero [
+  has: [
+    name is "Aria"
+    level starts as 1
+    hp starts as 100
+  ]
+  can: [
+    status [
+      say "Hero {name} is level {level} with {hp} HP"
+    ]
+    levelUp [
+      grow level by 1
+      grow hp by 20
+      say "{name} levelled up to {level}!"
+    ]
+  ]
+]
+
+tell Hero to status
+tell Hero to levelUp
+tell Hero to levelUp
+tell Hero to status
+
+~ ── Range loop building a list ──────────────────────────── ~
+summon "list" as lst
+set squares to []
+for each n from 1 to 5 [
+  set squares to lst.add(squares, n * n)
+]
+say "Squares 1-5: {squares}"
+
+~ ── for each over result of list operations ─────────────── ~
+summon "text" as t
+set words to ["hello", "world", "from", "HE"]
+for each word in words [
+  say t.upper(word)
+]
+
+say "All Pass 3 tests passed!"

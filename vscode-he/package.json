@@ -1,0 +1,187 @@
+{
+  "name": "he-lang",
+  "displayName": "HE Language",
+  "description": "Syntax highlighting, snippets, and tools for the HE programming language — a near-English language for WolfHead OS and beyond.",
+  "version": "5.0.0",
+  "publisher": "ocdtheweaver",
+  "galleryBanner": {
+    "color": "#DA7756",
+    "theme": "dark"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ocdtheweaver/HE"
+  },
+  "bugs": {
+    "url": "https://github.com/ocdtheweaver/HE/issues"
+  },
+  "homepage": "https://github.com/ocdtheweaver/HE#readme",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets",
+    "Other"
+  ],
+  "keywords": [
+    "he",
+    "he-lang",
+    "wolfhead",
+    "english programming",
+    "natural language"
+  ],
+  "activationEvents": [
+    "onLanguage:he"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "he",
+        "aliases": [
+          "HE",
+          "he-lang"
+        ],
+        "extensions": [
+          ".he"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./images/file-icon.png",
+          "dark": "./images/file-icon.png"
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "he",
+        "scopeName": "source.he",
+        "path": "./syntaxes/he.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "he",
+        "path": "./snippets/he.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "he.runFile",
+        "title": "HE: Run File",
+        "icon": "$(play)"
+      },
+      {
+        "command": "he.checkFile",
+        "title": "HE: Check File (Types + Protection Tags)"
+      },
+      {
+        "command": "he.buildFile",
+        "title": "HE: Build to .hex Bundle"
+      },
+      {
+        "command": "he.openRepl",
+        "title": "HE: Open REPL"
+      },
+      {
+        "command": "he.runGenesis",
+        "title": "HE: Run genesis.he"
+      }
+    ],
+    "menus": {
+      "editor/title/run": [
+        {
+          "command": "he.runFile",
+          "when": "resourceExtname == .he",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "he.runFile",
+          "when": "resourceExtname == .he",
+          "group": "he@1"
+        },
+        {
+          "command": "he.checkFile",
+          "when": "resourceExtname == .he",
+          "group": "he@2"
+        },
+        {
+          "command": "he.buildFile",
+          "when": "resourceExtname == .he",
+          "group": "he@3"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "he.runFile",
+          "when": "resourceExtname == .he",
+          "group": "he@1"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "he.runFile",
+        "key": "ctrl+f5",
+        "mac": "cmd+f5",
+        "when": "editorLangId == he"
+      },
+      {
+        "command": "he.checkFile",
+        "key": "ctrl+shift+k",
+        "mac": "cmd+shift+k",
+        "when": "editorLangId == he"
+      }
+    ],
+    "configuration": {
+      "title": "HE Language",
+      "properties": {
+        "he.executablePath": {
+          "type": "string",
+          "default": "he",
+          "description": "Path to the 'he' executable. Defaults to 'he' (must be on your PATH)."
+        },
+        "he.checkOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Run 'he check' automatically when a .he file is saved."
+        },
+        "he.buildOutputDir": {
+          "type": "string",
+          "default": ".",
+          "description": "Directory where 'he build' places the .hex output file."
+        }
+      }
+    },
+    "colors": [
+      {
+        "id": "he.protectedTag",
+        "description": "Color for #protected[N] tags in HE source files",
+        "defaults": {
+          "dark": "#E8927C",
+          "light": "#C0552A",
+          "highContrast": "#FF8C69"
+        }
+      }
+    ],
+    "iconThemes": [
+      {
+        "id": "he-icons",
+        "label": "HE File Icons",
+        "path": "./file-icons/he-icon-theme.json"
+      }
+    ]
+  },
+  "scripts": {
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^2.32.0"
+  },
+  "icon": "images/icon.png"
+}

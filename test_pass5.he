@@ -1,0 +1,105 @@
+~ Pass 5 — named errors, each shorthand, time module, type annotations, file modules ~
+
+~ ── named error capture ─────────────────────────────────── ~
+summon "io" as io
+
+try [
+  set data to io.read("no_such_file.txt")
+] or (problem) [
+  say "Caught named error: {problem}"
+]
+
+~ ── each shorthand (no 'for' prefix) ────────────────────── ~
+set total to 0
+each i from 1 to 10 [
+  grow total by i
+]
+say "Sum 1-10 via 'each': {total}"
+
+each n from 10 to 50 step 10 [
+  say "  count: {n}"
+]
+
+~ ── time module ──────────────────────────────────────────── ~
+summon "clock" as clock
+
+set today to clock.today()
+say "Today is: {today}"
+
+set now to clock.now()
+say "Current hour: {now.hour}"
+say "Day of week: {now.weekday}"
+say "Unix timestamp: {now.unix}"
+
+set formatted to clock.format(now, "YYYY/MM/DD")
+say "Formatted: {formatted}"
+
+~ ── type annotated properties ───────────────────────────── ~
+create Character [
+  has: [
+    name: text is "Unnamed"
+    health: number is 100
+    alive: boolean is true
+    tags: list is []
+  ]
+  can: [
+    describe [
+      say "{name} — HP: {health} — alive: {alive}"
+    ]
+  ]
+]
+
+tell Character to describe
+set Character.name to "Zara"
+set Character.health to 85
+tell Character to describe
+
+~ ── file module (creates a temp module file first) ──────── ~
+summon "io" as io
+
+io.write("mylib.he",
+"set version to \"1.0.0\"
+set author to \"HE Team\"
+create Utils [
+  can: [
+    clamp(val, lo, hi) [
+      if val < lo then [ return lo ]
+      if val > hi then [ return hi ]
+      return val
+    ]
+    percent(part, total) [
+      return (part / total) * 100
+    ]
+  ]
+]
+say \"mylib loaded\"
+")
+
+summon "mylib.he" as lib
+say "Module version: {lib.version}"
+say "Module author: {lib.author}"
+
+~ ── combining time with try ──────────────────────────────── ~
+set start to clock.now()
+set count to 0
+each i from 1 to 1000 [
+  grow count by 1
+]
+set elapsed to clock.since(start)
+say "Counted to 1000 in {elapsed} seconds"
+
+~ ── named error with recovery ───────────────────────────── ~
+set result to "none"
+try [
+  set x to 10
+  set y to 0
+  ~ dividing by zero triggers an error in a tell ~
+  set result to x / y
+  say "Result: {result}"
+] or (divErr) [
+  say "Division problem: {divErr}"
+  set result to "undefined"
+]
+say "Final result: {result}"
+
+say "All Pass 5 tests passed!"

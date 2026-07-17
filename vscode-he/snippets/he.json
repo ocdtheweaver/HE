@@ -1,0 +1,480 @@
+{
+  "Create object": {
+    "prefix": "create",
+    "body": [
+      "create ${1:Name} [",
+      "  has: [",
+      "    ${2:property} is ${3:value}",
+      "  ]",
+      "  can: [",
+      "    ${4:doSomething} [",
+      "      $0",
+      "    ]",
+      "  ]",
+      "]"
+    ],
+    "description": "Create a new HE object with properties and abilities"
+  },
+
+  "Create protected object": {
+    "prefix": "createp",
+    "body": [
+      "create ${1:Name} #${2:protected} [",
+      "  has: [",
+      "    ${3:property} is ${4:value}",
+      "  ]",
+      "  can: [",
+      "    ${5:doSomething} [",
+      "      $0",
+      "    ]",
+      "  ]",
+      "]"
+    ],
+    "description": "Create a protected HE object with a #protectedN tag"
+  },
+
+  "Make object": {
+    "prefix": "make",
+    "body": [
+      "make ${1:Name} [",
+      "  has: [",
+      "    ${2:property} is ${3:value}",
+      "  ]",
+      "  can: [",
+      "    ${4:doSomething} [",
+      "      $0",
+      "    ]",
+      "  ]",
+      "]"
+    ],
+    "description": "Make a new HE object (alias of create)"
+  },
+
+  "Has section": {
+    "prefix": "has",
+    "body": [
+      "has: [",
+      "  ${1:property} is ${2:value}",
+      "  $0",
+      "]"
+    ],
+    "description": "Object has: [ properties ] section"
+  },
+
+  "Can section": {
+    "prefix": "can",
+    "body": [
+      "can: [",
+      "  ${1:ability} [",
+      "    $0",
+      "  ]",
+      "]"
+    ],
+    "description": "Object can: [ abilities ] section"
+  },
+
+  "Ability with params": {
+    "prefix": "ability",
+    "body": [
+      "${1:name}(${2:param}) [",
+      "  $0",
+      "  return ${3:result}",
+      "]"
+    ],
+    "description": "Named ability with parameters"
+  },
+
+  "Protected ability": {
+    "prefix": "abilityprot",
+    "body": [
+      "${1:name}(${2:param}) #${3:protected1} [",
+      "  $0",
+      "]"
+    ],
+    "description": "Named ability with a protection tag"
+  },
+
+  "Anonymous ability (closure)": {
+    "prefix": "ab",
+    "body": [
+      "set ${1:name} to ability(${2:param}) [",
+      "  return $0",
+      "]"
+    ],
+    "description": "Anonymous ability stored as a variable (closure)"
+  },
+
+  "Summon with alias": {
+    "prefix": "summon",
+    "body": [
+      "summon \"${1:module.he}\" as ${2:alias}"
+    ],
+    "description": "Summon a file module with an alias"
+  },
+
+  "Summon flat (no alias)": {
+    "prefix": "summonf",
+    "body": [
+      "summon \"${1:module.he}\""
+    ],
+    "description": "Flat summon — module contents available directly by name"
+  },
+
+  "Summon built-in math": {
+    "prefix": "summonmath",
+    "body": [
+      "summon \"math\" as m"
+    ],
+    "description": "Summon the built-in math module"
+  },
+
+  "Summon built-in text": {
+    "prefix": "summontext",
+    "body": [
+      "summon \"text\" as t"
+    ],
+    "description": "Summon the built-in text module"
+  },
+
+  "Summon built-in list": {
+    "prefix": "summonlist",
+    "body": [
+      "summon \"list\" as lst"
+    ],
+    "description": "Summon the built-in list module"
+  },
+
+  "Summon built-in io": {
+    "prefix": "summonio",
+    "body": [
+      "summon \"io\" as io"
+    ],
+    "description": "Summon the built-in io module"
+  },
+
+  "Summon built-in clock": {
+    "prefix": "summonclock",
+    "body": [
+      "summon \"clock\" as clock"
+    ],
+    "description": "Summon the built-in clock/time module"
+  },
+
+  "Set variable": {
+    "prefix": "set",
+    "body": [
+      "set ${1:name} to ${2:value}"
+    ],
+    "description": "Set a variable"
+  },
+
+  "Say": {
+    "prefix": "say",
+    "body": [
+      "say \"${1:message}\""
+    ],
+    "description": "Print to output"
+  },
+
+  "Say interpolated": {
+    "prefix": "sayi",
+    "body": [
+      "say \"${1:message}: {${2:variable}}\""
+    ],
+    "description": "Print with string interpolation"
+  },
+
+  "If then": {
+    "prefix": "if",
+    "body": [
+      "if ${1:condition} then [",
+      "  $0",
+      "]"
+    ],
+    "description": "If/then block"
+  },
+
+  "If then else": {
+    "prefix": "ife",
+    "body": [
+      "if ${1:condition} then [",
+      "  $2",
+      "] else [",
+      "  $0",
+      "]"
+    ],
+    "description": "If/then/else block"
+  },
+
+  "If is between": {
+    "prefix": "between",
+    "body": [
+      "if ${1:x} is between ${2:low} and ${3:high} then [",
+      "  $0",
+      "]"
+    ],
+    "description": "Range comparison"
+  },
+
+  "If is one of": {
+    "prefix": "oneof",
+    "body": [
+      "if ${1:x} is one of [${2:\"a\", \"b\", \"c\"}] then [",
+      "  $0",
+      "]"
+    ],
+    "description": "Membership test"
+  },
+
+  "Repeat times": {
+    "prefix": "repeat",
+    "body": [
+      "repeat ${1:3} times [",
+      "  $0",
+      "]"
+    ],
+    "description": "Repeat N times"
+  },
+
+  "Repeat times with counter": {
+    "prefix": "repeati",
+    "body": [
+      "repeat ${1:3} times as ${2:i} [",
+      "  $0",
+      "]"
+    ],
+    "description": "Repeat N times with a named counter variable"
+  },
+
+  "Repeat while": {
+    "prefix": "while",
+    "body": [
+      "repeat while ${1:condition} [",
+      "  $0",
+      "]"
+    ],
+    "description": "Repeat while condition is true"
+  },
+
+  "Repeat until": {
+    "prefix": "until",
+    "body": [
+      "repeat until ${1:condition} [",
+      "  $0",
+      "]"
+    ],
+    "description": "Repeat until condition is true"
+  },
+
+  "For each": {
+    "prefix": "foreach",
+    "body": [
+      "for each ${1:item} in ${2:list} [",
+      "  $0",
+      "]"
+    ],
+    "description": "Iterate over a list"
+  },
+
+  "Each from to": {
+    "prefix": "each",
+    "body": [
+      "each ${1:i} from ${2:1} to ${3:10} [",
+      "  $0",
+      "]"
+    ],
+    "description": "Count from one number to another (short form)"
+  },
+
+  "Each from to step": {
+    "prefix": "eachstep",
+    "body": [
+      "each ${1:i} from ${2:0} to ${3:100} step ${4:5} [",
+      "  $0",
+      "]"
+    ],
+    "description": "Count with a custom step size"
+  },
+
+  "For each field": {
+    "prefix": "foreachfield",
+    "body": [
+      "for each ${1:key}, ${2:val} in ${3:object} [",
+      "  $0",
+      "]"
+    ],
+    "description": "Iterate over object fields as key-value pairs"
+  },
+
+  "Try or": {
+    "prefix": "try",
+    "body": [
+      "try [",
+      "  $1",
+      "] or (${2:err}) [",
+      "  say \"Error: {${2:err}}\"",
+      "  $0",
+      "]"
+    ],
+    "description": "Try/or error handling with named error variable"
+  },
+
+  "Try or silent": {
+    "prefix": "trys",
+    "body": [
+      "try [",
+      "  $1",
+      "] or if it fails [",
+      "  $0",
+      "]"
+    ],
+    "description": "Try/or with anonymous error handler"
+  },
+
+  "Tell": {
+    "prefix": "tell",
+    "body": [
+      "tell ${1:Object} to ${2:action}"
+    ],
+    "description": "Call an object's ability"
+  },
+
+  "Tell with": {
+    "prefix": "tellw",
+    "body": [
+      "tell ${1:Object} to ${2:action} with ${3:value}"
+    ],
+    "description": "Call an ability with arguments"
+  },
+
+  "Ask input": {
+    "prefix": "ask",
+    "body": [
+      "ask \"${1:What is your name?}\" as ${2:answer}"
+    ],
+    "description": "Ask the user for input"
+  },
+
+  "With scope": {
+    "prefix": "with",
+    "body": [
+      "with ${1:expression} as ${2:alias} [",
+      "  $0",
+      "]"
+    ],
+    "description": "Bind an expression to a short alias for a block"
+  },
+
+  "Remember": {
+    "prefix": "remember",
+    "body": [
+      "remember ${1:variable}"
+    ],
+    "description": "Persist a variable to disk"
+  },
+
+  "Recall": {
+    "prefix": "recall",
+    "body": [
+      "recall ${1:variable}"
+    ],
+    "description": "Load a remembered variable from disk"
+  },
+
+  "Protected policy": {
+    "prefix": "policyblock",
+    "body": [
+      "create ${1:protected} [",
+      "  has: [",
+      "    planName is \"${2:Free}\"",
+      "    mode is \"${3:cached}\"",
+      "    endpoint is \"${4:https://api.myapp.com/entitlement}\"",
+      "    graceSeconds is ${5:0}",
+      "  ]",
+      "]"
+    ],
+    "description": "A protection policy block for protected.he"
+  },
+
+  "Genesis template": {
+    "prefix": "genesis",
+    "body": [
+      "~ genesis.he — ${1:App Name} entry point ~",
+      "",
+      "summon \"protected.he\"",
+      "",
+      "create ${2:App} [",
+      "  has: [",
+      "    name is \"${1:App Name}\"",
+      "    version is \"1.0.0\"",
+      "  ]",
+      "  can: [",
+      "    start [",
+      "      say \"${1:App Name} starting...\"",
+      "      $0",
+      "    ]",
+      "  ]",
+      "]",
+      "",
+      "tell ${2:App} to start"
+    ],
+    "description": "Full genesis.he entry point template"
+  },
+
+  "Grow by": {
+    "prefix": "grow",
+    "body": [
+      "grow ${1:variable} by ${2:1}"
+    ],
+    "description": "Increment a variable"
+  },
+
+  "Shrink by": {
+    "prefix": "shrink",
+    "body": [
+      "shrink ${1:variable} by ${2:1}"
+    ],
+    "description": "Decrement a variable"
+  },
+
+  "Return": {
+    "prefix": "return",
+    "body": [
+      "return ${1:value}"
+    ],
+    "description": "Return a value from an ability"
+  },
+
+  "Multi-assign": {
+    "prefix": "setmulti",
+    "body": [
+      "set ${1:a}, ${2:b} to ${3:expr1}, ${4:expr2}"
+    ],
+    "description": "Assign multiple variables at once"
+  },
+
+  "On reaction": {
+    "prefix": "on",
+    "body": [
+      "on ${1:click} [",
+      "  $0",
+      "]"
+    ],
+    "description": "React to an event"
+  },
+
+  "Inheritance": {
+    "prefix": "like",
+    "body": [
+      "create ${1:Child} like ${2:Parent} [",
+      "  has: [",
+      "    ${3:property} is ${4:value}",
+      "  ]",
+      "  can: [",
+      "    $0",
+      "  ]",
+      "]"
+    ],
+    "description": "Create an object that inherits from another"
+  }
+}

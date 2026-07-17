@@ -1,0 +1,74 @@
+~ protected.he — StreamFlix subscription tiers.
+
+   This file defines what each #protected[N] tag used in genesis.he
+   actually means. HE itself has no idea what "Standard" or "Premium"
+   are — it only knows the tag name. This file is where that meaning
+   lives, as plain data the (future) enforcement layer will read.
+
+   CURRENT STATE OF THE LANGUAGE: this is real, working HE — it parses
+   and runs today. But nothing reads or enforces it yet (that's Stage A,
+   Step 3 of the protection roadmap, not built). Right now, every
+   #protected[N]-tagged ability in genesis.he still runs for everyone,
+   regardless of plan. Treat this file as the target shape, not a
+   working paywall. ~
+
+
+~ Bare #protected — the free tier. No account needed beyond signup.
+   Cached mode: if StreamFlix's servers are unreachable, whatever was
+   already verified free (trailers, previews) keeps working. ~
+create protected [
+  has: [
+    planName is "Free"
+    mode is "cached"
+    endpoint is "https://api.streamflix.example/entitlement/free"
+    graceSeconds is 86400
+  ]
+]
+
+
+~ #protected1 — Standard plan. Full catalog, one stream at a time,
+   1080p. Cached mode: someone who already pressed play and has a
+   show buffered/downloading shouldn't get cut off by a dropped
+   connection mid-episode — that's the WhatsApp/Wattpad-style
+   behavior we designed for. A week of offline grace before
+   StreamFlix insists on re-checking. ~
+create protected1 [
+  has: [
+    planName is "Standard"
+    mode is "cached"
+    endpoint is "https://api.streamflix.example/entitlement/standard"
+    graceSeconds is 604800
+  ]
+]
+
+
+~ #protected2 — Premium plan. 4K/HDR, downloads for offline viewing,
+   up to 4 simultaneous streams. Still cached, not live — premium
+   shouldn't be punished harder than Standard just for being premium.
+   Same week-long grace window. ~
+create protected2 [
+  has: [
+    planName is "Premium"
+    mode is "cached"
+    endpoint is "https://api.streamflix.example/entitlement/premium"
+    graceSeconds is 604800
+  ]
+]
+
+
+~ #protected3 — Live sports/events. This is the one tier where "live"
+   mode actually matters: a live broadcast is, by nature, something
+   StreamFlix has to verify in real time (rights are often
+   region/time-boxed, and stream tokens are short-lived to deter
+   re-sharing). No offline grace — if there's no connection, a live
+   event correctly refuses to start, the same way eFootball's ranked
+   mode does. This is the integrity-sensitive case from our design
+   discussion, not the library-stays-readable case. ~
+create protected3 [
+  has: [
+    planName is "Live Events"
+    mode is "live"
+    endpoint is "https://api.streamflix.example/entitlement/live"
+    graceSeconds is 0
+  ]
+]

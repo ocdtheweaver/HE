@@ -1,0 +1,77 @@
+~ test_protection.he — protection tag ENFORCEMENT (Pass 14).
+   Supersedes the Pass 11 version, which only tested that tags parsed.
+   Now that Stage A / Step 3 (enforcement) is built, tags are no longer
+   inert: a denied tag is a real, catchable runtime error.
+
+   This file can't configure the entitlement checker itself (that's a
+   Go-level call, not an HE-level one — see lang/eval/entitlement_test.go
+   for checker unit tests). What this file proves is the HE-visible
+   behavior under the RUNTIME DEFAULT, which is AlwaysDeny — fail closed.
+   So: every #protected[N] call here is expected to be denied, and every
+   denial is expected to be cleanly catchable via try/or. ~
+
+make Car3 #protected [
+  has: [
+    speed is 200
+  ]
+  can: [
+    drive [
+      say "Vroom! (this should never print under AlwaysDeny)"
+    ]
+  ]
+]
+
+create Replay [
+  can: [
+    past20Seconds #protected1 [
+      say "Replaying last 20 seconds (should never print)"
+    ]
+    freePreview [
+      say "This is a free preview, anyone can see it"
+    ]
+  ]
+]
+
+create Store [
+  can: [
+    unlockSkin(name) #protected2 [
+      say "Unlocking skin: {name} (should never print)"
+    ]
+    browseSkins [
+      say "Browsing the skin catalog (free)"
+    ]
+  ]
+]
+
+~ ── Unprotected abilities run exactly as before — no change here ── ~
+tell Replay to freePreview
+tell Store to browseSkins
+say "Unprotected abilities ran normally."
+
+~ ── A whole-object tag (#protected on Car3) is denied, and catchable ── ~
+try [
+  tell Car3 to drive
+] or (err) [
+  say "Caught expected denial for Car3: {err}"
+]
+
+~ ── A per-ability tag (#protected1 on past20Seconds) is denied too ── ~
+try [
+  tell Replay to past20Seconds
+] or (err) [
+  say "Caught expected denial for past20Seconds: {err}"
+]
+
+~ ── Same for a tagged ability that takes arguments ── ~
+try [
+  tell Store to unlockSkin with "Golden Falcon"
+] or (err) [
+  say "Caught expected denial for unlockSkin: {err}"
+]
+
+~ ── Denial doesn't corrupt the runtime — normal code keeps working
+   after a caught denial, in the same program ── ~
+tell Replay to freePreview
+say "Program continued normally after catching denials."
+
+say "All protection enforcement tests passed!"

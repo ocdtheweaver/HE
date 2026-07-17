@@ -1,0 +1,16 @@
+~ UI.he — a styling/component provider, summoned with an alias since
+   "make nav" style usage wants a clear ui.something() call site. ~
+
+create UIKit [
+  has: [
+    theme is "dark"
+  ]
+  can: [
+    nav(label) [
+      say "[nav: {label}, theme={theme}]"
+    ]
+    button(label) [
+      say "[button: {label}, theme={theme}]"
+    ]
+  ]
+]

@@ -1,0 +1,32 @@
+~ test_protected_policy.he — confirms protected.he is valid, ordinary HE
+   and that its objects can be read via flat summon, matching the tag
+   names used by #protected[N]. Stage A / step 1 of the protection roadmap.
+
+   Scope: format + readability only. No enforcement reads this file yet. ~
+
+summon "protected.he"
+
+~ Bare #protected ~
+if protected.mode is "cached" then [
+  say "Base tier: cached mode confirmed"
+]
+say "Base tier endpoint: " + protected.endpoint
+
+~ #protected1 ~
+if protected1.mode is "cached" then [
+  say "Plan A: cached mode confirmed"
+]
+say "Plan A grace period: " + protected1.graceSeconds + " seconds"
+
+~ #protected2 ~
+if protected2.mode is "live" then [
+  say "Plan B: live mode confirmed (no offline grace, by design)"
+]
+say "Plan B endpoint: " + protected2.endpoint
+
+~ Confirm tag-name symmetry: the object name in protected.he matches
+   the tag name used in #protected[N] exactly, so a future enforcement
+   step can look up policy by tag name with no translation. ~
+say "Policy object names match tag names: protected, protected1, protected2"
+
+say "All protected.he policy tests passed!"

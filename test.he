@@ -1,0 +1,114 @@
+~ Test: plain English features ~
+
+~ Basic output ~
+say "HE is alive"
+
+~ Variables — set, let, change ~
+set score to 0
+let name be "Hunter"
+say "Hello, " + name
+
+~ grow and shrink ~
+grow score by 10
+say "Score after growing: " + score
+shrink score by 3
+say "Score after shrinking: " + score
+
+~ if / then / else ~
+if score > 5 then [
+  say "Score is above 5"
+] else [
+  say "Score is 5 or below"
+]
+
+~ check if (alias) ~
+check if score == 7 then [
+  say "Score is exactly 7"
+]
+
+~ repeat N times ~
+set count to 0
+repeat 3 times [
+  grow count by 1
+]
+say "Count after 3 repeats: " + count
+
+~ repeat while ~
+set x to 0
+repeat while x < 3 [
+  grow x by 1
+]
+say "x after while: " + x
+
+~ not keyword ~
+set finished to false
+if not finished then [
+  say "Not done yet"
+]
+
+~ Object with has, can, on ~
+create Counter [
+  has: [
+    value starts as 0
+  ]
+  can: [
+    increment [
+      grow value by 1
+    ]
+    reset [
+      set value to 0
+    ]
+    getValue returns number [
+      return value
+    ]
+  ]
+  on click [
+    say "Counter clicked! Value is " + value
+  ]
+]
+
+tell Counter to increment
+tell Counter to increment
+tell Counter to increment
+say "Counter value: " + Counter.value
+
+~ Inheritance ~
+create BetterCounter like Counter [
+  has: [
+    stride starts as 2
+  ]
+  can: [
+    bigIncrement [
+      grow value by stride
+    ]
+  ]
+]
+
+tell BetterCounter to bigIncrement
+say "BetterCounter value: " + BetterCounter.value
+
+~ Summon math module ~
+summon "math" as m
+say "sqrt(16) = " + m.sqrt(16)
+say "abs(-5) = " + m.abs(-5)
+say "max(3, 7) = " + m.max(3, 7)
+say "round(3.7) = " + m.round(3.7)
+
+~ Summon text module ~
+summon "text" as t
+say "upper: " + t.upper("hello")
+say "length: " + t.length("hello world")
+say "contains: " + t.contains("hello world", "world")
+say "replace: " + t.replace("I love cats", "cats", "dogs")
+
+~ Summon list module ~
+summon "list" as lst
+set items to ["apple", "banana", "cherry"]
+say "length: " + lst.length(items)
+say "first: " + lst.first(items)
+say "last: " + lst.last(items)
+set items to lst.add(items, "date")
+say "after add: " + lst.length(items)
+
+~ Named arg block ~
+say "All tests passed!"

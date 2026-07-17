@@ -1,0 +1,134 @@
+~ genesis.he — StreamFlix's entry point. This is what "he run" finds
+   automatically when you're in this folder (no filename needed).
+
+   Demonstrates:
+     - summon "protected.he" to pull in the tier definitions
+     - #protected / #protected1 / #protected2 / #protected3 tagging
+       a whole object and individual abilities, matching the four
+       tiers defined in protected.he by name
+     - reading a tier's own policy fields (planName, mode, etc.)
+       directly, since summon flat-merges them
+     - try/or around every protected call, since denial is now real
+       (Stage A, Step 3 of the protection roadmap is built)
+
+   CURRENT STATE: enforcement is live. The HE runtime's default
+   entitlement checker is AlwaysDeny — fail closed — so every
+   #protected[N] call below WILL be denied unless something configures
+   a different checker. That's intentional: this example shows what a
+   real app's call sites look like (wrapped in try/or, with a sensible
+   fallback), not a logged-in session. A real StreamFlix build would
+   configure its checker against an actual subscription service before
+   running this file — that's Stage A, Step 6 (real networking),
+   still not built. ~
+
+summon "protected.he"
+
+create Viewer [
+  has: [
+    name is "Guest"
+    currentPlan is "Free"
+  ]
+]
+
+~ ── Free tier: browsing and previews, no account restrictions ── ~
+create Catalog [
+  can: [
+    browse [
+      say "Browsing the full catalog (titles only, no playback)"
+    ]
+    watchTrailer(title) [
+      say "Playing trailer for {title}"
+    ]
+  ]
+]
+
+~ ── Standard plan: full playback, one stream, 1080p ── ~
+create Standard #protected1 [
+  has: [
+    maxStreams is 1
+    maxQuality is "1080p"
+  ]
+  can: [
+    watchFullEpisode(title) [
+      say "Streaming {title} in {maxQuality} (Standard, {maxStreams} stream)"
+    ]
+  ]
+]
+
+~ ── Premium plan: 4K, downloads, multiple streams ── ~
+create Premium #protected2 [
+  has: [
+    maxStreams is 4
+    maxQuality is "4K HDR"
+  ]
+  can: [
+    watchFullEpisode(title) [
+      say "Streaming {title} in {maxQuality} (Premium, {maxStreams} streams)"
+    ]
+    downloadForOffline(title) [
+      say "Downloading {title} for offline viewing"
+    ]
+  ]
+]
+
+~ ── Live sports/events: its own object, its own tag ── ~
+create LiveEvents [
+  can: [
+    watchLive(eventName) #protected3 [
+      say "Connecting to live broadcast: {eventName}"
+    ]
+    browseUpcoming [
+      say "Browsing upcoming live events (free to view the schedule)"
+    ]
+  ]
+]
+
+
+~ ── A normal viewing session ── ~
+
+set Viewer.name to "Hunter"
+
+~ Free features need no try/or — they're never gated. ~
+tell Catalog to browse
+tell Catalog to watchTrailer with "The Last Signal"
+tell LiveEvents to browseUpcoming
+
+~ Every protected call is wrapped — denial is a normal, expected
+   outcome for a free/guest viewer, not a crash. ~
+try [
+  tell Standard to watchFullEpisode with "The Last Signal: Episode 1"
+] or (err) [
+  say "Standard playback unavailable: {err}"
+  say "  → showing 'Upgrade to Standard' prompt"
+]
+
+try [
+  tell Premium to watchFullEpisode with "The Last Signal: Episode 1"
+] or (err) [
+  say "Premium playback unavailable: {err}"
+  say "  → showing 'Upgrade to Premium' prompt"
+]
+
+try [
+  tell Premium to downloadForOffline with "The Last Signal: Episode 1"
+] or (err) [
+  say "Offline download unavailable: {err}"
+]
+
+try [
+  tell LiveEvents to watchLive with "Championship Final"
+] or (err) [
+  say "Live event unavailable: {err}"
+  say "  → live events need an active connection and a Live Events pass"
+]
+
+~ ── Reading each tier's own policy, via flat summon ──
+   (this part is unaffected by enforcement — it's just reading data) ~
+say ""
+say "Plan: {protected.planName} — mode: {protected.mode}"
+say "Plan: {protected1.planName} — mode: {protected1.mode}, grace: {protected1.graceSeconds}s"
+say "Plan: {protected2.planName} — mode: {protected2.mode}, grace: {protected2.graceSeconds}s"
+say "Plan: {protected3.planName} — mode: {protected3.mode}, grace: {protected3.graceSeconds}s"
+
+say ""
+say "StreamFlix genesis ran successfully (denials above are expected for a guest viewer)."

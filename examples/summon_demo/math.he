@@ -1,0 +1,18 @@
+~ math.he — a utility module meant to be flat-summoned.
+   summon "math.he" alone gives you sqrt(), double(), square() directly.
+   summon "math.he" as maths additionally gives you maths.sqrt(), etc. ~
+
+create MathUtils [
+  can: [
+    sqrt(n) [
+      summon "math" as m
+      return m.sqrt(n)
+    ]
+    double(n) [
+      return n * 2
+    ]
+    square(n) [
+      return n * n
+    ]
+  ]
+]
